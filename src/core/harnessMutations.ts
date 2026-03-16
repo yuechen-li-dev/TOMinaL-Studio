@@ -453,6 +453,7 @@ export function addWire(doc: HarnessDocument, partial: Partial<Wire> = {}): Harn
     from: normalizePinRef(partial.from ?? { connectorId: '', pinId: '1' }),
     to: normalizePinRef(partial.to ?? { connectorId: '', pinId: '1' }),
     route: [...(partial.route ?? [])],
+    slackMm: partial.slackMm,
     color: partial.color,
     gauge: partial.gauge,
     material: partial.material,

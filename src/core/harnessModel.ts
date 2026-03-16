@@ -59,6 +59,7 @@ export type Wire = {
   from: PinRef;
   to: PinRef;
   route: string[];
+  slackMm?: number;
   color?: string;
   gauge?: string;
   material?: string;
@@ -183,6 +184,7 @@ export function createSampleHarnessDocument(): HarnessDocument {
         from: { connectorId: 'ECU_C1', pinId: '1' },
         to: { connectorId: 'CLUSTER_C1', pinId: '1' },
         route: ['SEG_MAIN_LEFT', 'SEG_MAIN_RIGHT'],
+        slackMm: 30,
         color: 'PK',
         gauge: '0.5 mm²',
         material: 'TXL'
@@ -192,6 +194,7 @@ export function createSampleHarnessDocument(): HarnessDocument {
         from: { connectorId: 'ECU_C1', pinId: '2' },
         to: { connectorId: 'CLUSTER_C1', pinId: '2' },
         route: ['SEG_MAIN_LEFT', 'SEG_MAIN_RIGHT'],
+        slackMm: 20,
         color: 'GN',
         gauge: '0.35 mm²',
         material: 'TXL'
@@ -201,6 +204,7 @@ export function createSampleHarnessDocument(): HarnessDocument {
         from: { connectorId: 'ECU_C1', pinId: '3' },
         to: { connectorId: 'CLUSTER_C1', pinId: '3' },
         route: ['SEG_MAIN_LEFT', 'SEG_MAIN_RIGHT'],
+        slackMm: 20,
         color: 'YE',
         gauge: '0.35 mm²',
         material: 'TXL'

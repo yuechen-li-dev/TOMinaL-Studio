@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import type { HarnessDocument, Wire } from '@/core/harnessModel';
 import {
   formatPinRef,
+  getAllWireMetrics,
   getAllWires,
   getConnectorPins,
   getNodeById,
   getNodeKind,
   getSegmentById,
-  getWireById
+  getWireById,
+  getWireMetrics
 } from '@/core/harnessSelectors';
 
 type RightInspectorProps = {
@@ -28,6 +30,48 @@ function parseRouteInput(raw: string): string[] {
     .filter(Boolean);
 }
 
+function toCutListCsv(harnessDocument: HarnessDocument): string {
+  const metricsByWireId = getAllWireMetrics(harnessDocument);
+  const rows = Object.values(harnessDocument.wires).map((wire) => {
+    const metrics = metricsByWireId[wire.id];
+
+    return [
+      wire.id,
+      formatPinRef(wire.from),
+      formatPinRef(wire.to),
+      wire.gauge ?? '',
+      wire.color ?? '',
+      String(metrics?.cutLengthMm ?? 0)
+    ];
+  });
+
+  const escapeCsvCell = (value: string): string => {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+
+    return value;
+  };
+
+  const header = ['wire_id', 'from', 'to', 'gauge', 'color', 'length_mm'];
+  const lines = [header, ...rows].map((line) => line.map(escapeCsvCell).join(','));
+
+  return `${lines.join('\n')}\n`;
+}
+
+function downloadCutListCsv(harnessDocument: HarnessDocument): void {
+  const csv = toCutListCsv(harnessDocument);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = window.document.createElement('a');
+
+  link.href = url;
+  link.download = 'tominal-cut-list.csv';
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
 export function RightInspector({
   document,
   selection,
@@ -44,6 +88,8 @@ export function RightInspector({
   const selectedNodeKind = selectedNodeId ? getNodeKind(document, selectedNodeId) : undefined;
   const selectedSegment = selectedSegmentId ? getSegmentById(document, selectedSegmentId) : undefined;
   const selectedWire = selectedWireId ? getWireById(document, selectedWireId) : undefined;
+  const selectedWireMetrics = selectedWire ? getWireMetrics(document, selectedWire.id) : undefined;
+  const allWireMetrics = getAllWireMetrics(document);
   const wires = getAllWires(document);
 
   const fromPins = selectedWire ? getConnectorPins(document, selectedWire.from.connectorId) : [];
@@ -143,6 +189,18 @@ export function RightInspector({
                 value={selectedWire.route.join(', ')}
               />
 
+              <label className="text-muted-foreground">slack (mm)</label>
+              <input
+                className="rounded border border-border bg-background px-2 py-1"
+                onChange={(event) => {
+                  const raw = event.target.value.trim();
+                  const next = raw === '' ? undefined : Number(raw);
+                  onWireChange(selectedWire.id, { slackMm: Number.isNaN(next) ? undefined : next });
+                }}
+                type="number"
+                value={selectedWire.slackMm ?? ''}
+              />
+
               <label className="text-muted-foreground">color</label>
               <input
                 className="rounded border border-border bg-background px-2 py-1"
@@ -178,6 +236,15 @@ export function RightInspector({
                 value={selectedWire.notes ?? ''}
               />
             </div>
+
+            <dl className="grid grid-cols-[120px_1fr] gap-y-2 rounded border border-border/70 bg-background p-2">
+              <dt className="text-muted-foreground">Route length</dt>
+              <dd className="font-medium">{selectedWireMetrics?.routeLengthMm ?? 0} mm</dd>
+              <dt className="text-muted-foreground">Slack</dt>
+              <dd className="font-medium">{selectedWireMetrics?.slackMm ?? 0} mm</dd>
+              <dt className="text-muted-foreground">Cut length</dt>
+              <dd className="font-medium">{selectedWireMetrics?.cutLengthMm ?? 0} mm</dd>
+            </dl>
           </div>
         )}
 
@@ -270,6 +337,42 @@ export function RightInspector({
           </dl>
         )}
       </div>
+
+      <section className="mt-3 rounded-lg border border-border/70 bg-muted/20 p-3 text-sm">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="font-medium">Cut List</h3>
+          <Button onClick={() => downloadCutListCsv(document)} size="sm" variant="secondary">
+            Export Cut List
+          </Button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-left text-xs">
+            <thead>
+              <tr className="border-b border-border/70 text-muted-foreground">
+                <th className="px-2 py-1">Wire ID</th>
+                <th className="px-2 py-1">From</th>
+                <th className="px-2 py-1">To</th>
+                <th className="px-2 py-1">Gauge</th>
+                <th className="px-2 py-1">Color</th>
+                <th className="px-2 py-1">Cut length (mm)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {wires.map((wire) => (
+                <tr className="border-b border-border/40" key={wire.id}>
+                  <td className="px-2 py-1">{wire.id}</td>
+                  <td className="px-2 py-1">{formatPinRef(wire.from)}</td>
+                  <td className="px-2 py-1">{formatPinRef(wire.to)}</td>
+                  <td className="px-2 py-1">{wire.gauge ?? '—'}</td>
+                  <td className="px-2 py-1">{wire.color ?? '—'}</td>
+                  <td className="px-2 py-1">{allWireMetrics[wire.id]?.cutLengthMm ?? 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </aside>
   );
 }
