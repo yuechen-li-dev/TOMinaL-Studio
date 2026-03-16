@@ -59,10 +59,11 @@ export function FlowCanvas({ nodes, segments, onMoveNode, onSelectionChange }: F
         onSelectionChange={(selection) =>
           onSelectionChange({
             selectedNodeIds: (selection.nodes ?? []).map((node) => node.id),
-            selectedSegmentIds: (selection.edges ?? []).map((edge) => edge.id)
+            selectedSegmentIds: (selection.edges ?? []).map((edge) => edge.id),
+            selectedWireIds: []
           })
         }
-        onPaneClick={() => onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [] })}
+        onPaneClick={() => onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [] })}
       >
         <Background color="#dbe4ef" gap={20} size={1} />
         <MiniMap className="!bg-slate-100" nodeColor="#94a3b8" pannable zoomable />
