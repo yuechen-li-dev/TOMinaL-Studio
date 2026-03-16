@@ -1,4 +1,5 @@
 import type { Branch, Connector, HarnessDocument, PinRef, Segment, Splice, Wire } from '@/core/harnessModel';
+import { computeAllWireMetrics, computeWireMetrics, type WireMetrics } from '@/core/harnessCalculations';
 
 export type HarnessNode = Connector | Branch | Splice;
 
@@ -47,6 +48,19 @@ export function getAllWires(doc: HarnessDocument): Wire[] {
 
 export function countWires(doc: HarnessDocument): number {
   return Object.keys(doc.wires).length;
+}
+
+export function getWireMetrics(doc: HarnessDocument, wireId: string): WireMetrics | undefined {
+  const wire = getWireById(doc, wireId);
+  if (!wire) {
+    return undefined;
+  }
+
+  return computeWireMetrics(doc, wire);
+}
+
+export function getAllWireMetrics(doc: HarnessDocument): Record<string, WireMetrics> {
+  return computeAllWireMetrics(doc);
 }
 
 export function getConnectorPins(doc: HarnessDocument, connectorId: string): Array<{ pinId: string }> {
