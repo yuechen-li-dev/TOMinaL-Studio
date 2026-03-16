@@ -71,7 +71,7 @@ export function toFlowNodes(doc: HarnessDocument, options: ToFlowNodesOptions): 
 export function toFlowEdges(doc: HarnessDocument): Edge<TominalSegmentData>[] {
   return Object.values(doc.segments).map((segment) => ({
     id: segment.id,
-    type: 'harness',
+    type: 'default',
     source: segment.from,
     target: segment.to,
     data: {

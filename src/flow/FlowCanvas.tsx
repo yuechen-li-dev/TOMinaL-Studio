@@ -16,7 +16,6 @@ import '@xyflow/react/dist/style.css';
 
 import type { SelectionState } from '@/app/App';
 import type { XY } from '@/core/harnessModel';
-import { edgeTypes } from '@/flow/edgeTypes';
 import type { TominalNodeData, TominalSegmentData } from '@/flow/flowTypes';
 import { nodeTypes } from '@/flow/nodeTypes';
 
@@ -48,8 +47,7 @@ export function FlowCanvas({ nodes, segments, onMoveNode, onSelectionChange }: F
       <ReactFlow
         fitView
         connectionMode={ConnectionMode.Loose}
-        defaultEdgeOptions={{ type: 'harness' }}
-        edgeTypes={edgeTypes}
+        defaultEdgeOptions={{ type: 'default', style: { stroke: '#374151', strokeWidth: 2.4 } }}
         edges={uiEdges}
         nodeTypes={nodeTypes}
         nodes={uiNodes}
