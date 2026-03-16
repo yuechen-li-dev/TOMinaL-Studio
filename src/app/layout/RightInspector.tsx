@@ -111,14 +111,12 @@ export function RightInspector({
           {wires.map((wire) => (
             <li key={wire.id}>
               <button
-                className="flex w-full items-center justify-between rounded border border-border/70 bg-background px-2 py-1 text-left hover:bg-muted"
+                aria-pressed={selectedWireId === wire.id}
+                className="w-full rounded border border-border/70 bg-background px-2 py-1 text-left hover:bg-muted aria-pressed:border-primary/50 aria-pressed:bg-primary/10"
                 onClick={() => onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [wire.id] })}
                 type="button"
               >
                 <span className="font-medium">{wire.id}</span>
-                <span className="text-xs text-muted-foreground">
-                  {formatPinRef(wire.from)} → {formatPinRef(wire.to)}
-                </span>
               </button>
             </li>
           ))}
