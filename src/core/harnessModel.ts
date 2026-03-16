@@ -10,6 +10,7 @@ export type Board = {
 export type ConnectorPin = {
   signal?: string;
   terminalPartNumber?: string;
+  cavityLabel?: string;
 };
 
 export type Connector = {
@@ -89,14 +90,22 @@ export function createSampleHarnessDocument(): HarnessDocument {
         kind: 'inline',
         partNumber: 'ECU-CONN-001',
         position: [120, 220],
-        pins: {}
+        pins: {
+          '1': { signal: 'IGN_SW', terminalPartNumber: 'TE-1123343-1' },
+          '2': { signal: 'CAN_H', terminalPartNumber: 'TE-1123343-1' },
+          '3': { signal: 'CAN_L', terminalPartNumber: 'TE-1123343-1' }
+        }
       },
       CLUSTER_C1: {
         id: 'CLUSTER_C1',
         kind: 'inline',
         partNumber: 'CLUSTER-CONN-002',
         position: [660, 220],
-        pins: {}
+        pins: {
+          '1': { signal: 'CLUSTER_IGN', terminalPartNumber: 'MX150-33012' },
+          '2': { signal: 'CAN_H', terminalPartNumber: 'MX150-33012' },
+          '3': { signal: 'CAN_L' }
+        }
       }
     },
     branches: {

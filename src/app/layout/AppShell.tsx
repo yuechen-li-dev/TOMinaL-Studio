@@ -1,11 +1,21 @@
 import { useMemo } from 'react';
 
-import type { SelectionState } from '@/app/App';
+import type { SelectionState, UiState } from '@/app/App';
 import { LeftSidebar } from '@/app/layout/LeftSidebar';
 import { RightInspector } from '@/app/layout/RightInspector';
 import { TopBar } from '@/app/layout/TopBar';
-import { addBranch, addConnector, addSegment, addSplice, moveNode, updateSegment } from '@/core/harnessMutations';
-import type { HarnessDocument, XY } from '@/core/harnessModel';
+import {
+  addBranch,
+  addConnector,
+  addSegment,
+  addSplice,
+  moveNode,
+  setConnectorPinCount,
+  updateConnector,
+  updateConnectorPin,
+  updateSegment
+} from '@/core/harnessMutations';
+import type { ConnectorPin, HarnessDocument, XY } from '@/core/harnessModel';
 import { toFlowEdges, toFlowNodes } from '@/core/graphAdapter';
 import { countNodes, countSegments } from '@/core/harnessSelectors';
 import { FlowCanvas } from '@/flow/FlowCanvas';
@@ -14,14 +24,54 @@ import type { TominalNodeKind } from '@/flow/flowTypes';
 type AppShellProps = {
   document: HarnessDocument;
   onDocumentChange: React.Dispatch<React.SetStateAction<HarnessDocument>>;
+  uiState: UiState;
+  onUiStateChange: React.Dispatch<React.SetStateAction<UiState>>;
   selection: SelectionState;
   onSelectionChange: (selection: SelectionState) => void;
 };
 
 const getNewNodePosition = (index: number): XY => [120 + (index % 4) * 140, 120 + Math.floor(index / 4) * 120];
 
-export function AppShell({ document, onDocumentChange, selection, onSelectionChange }: AppShellProps) {
-  const nodes = useMemo(() => toFlowNodes(document), [document]);
+export function AppShell({
+  document,
+  onDocumentChange,
+  uiState,
+  onUiStateChange,
+  selection,
+  onSelectionChange
+}: AppShellProps) {
+  const connectorCallbacks = useMemo(
+    () => ({
+      onToggleCollapse: (connectorId: string) => {
+        onUiStateChange((current) => ({
+          ...current,
+          collapsedConnectorIds: {
+            ...current.collapsedConnectorIds,
+            [connectorId]: !(current.collapsedConnectorIds[connectorId] ?? true)
+          }
+        }));
+      },
+      onPartNumberChange: (connectorId: string, partNumber: string) => {
+        onDocumentChange((current) => updateConnector(current, connectorId, { partNumber: partNumber || undefined }));
+      },
+      onPinCountChange: (connectorId: string, pinCount: number) => {
+        onDocumentChange((current) => setConnectorPinCount(current, connectorId, pinCount));
+      },
+      onPinChange: (connectorId: string, pinId: string, patch: Partial<ConnectorPin>) => {
+        onDocumentChange((current) => updateConnectorPin(current, connectorId, pinId, patch));
+      }
+    }),
+    [onDocumentChange, onUiStateChange]
+  );
+
+  const nodes = useMemo(
+    () =>
+      toFlowNodes(document, {
+        collapsedConnectorIds: uiState.collapsedConnectorIds,
+        connectorCallbacks
+      }),
+    [connectorCallbacks, document, uiState.collapsedConnectorIds]
+  );
   const segments = useMemo(() => toFlowEdges(document), [document]);
 
   const summary = useMemo(
