@@ -19,6 +19,7 @@ import {
   updateWire
 } from '@/core/harnessMutations';
 import type { ConnectorPin, HarnessDocument, XY } from '@/core/harnessModel';
+import { exportHarnessToToml, importHarnessFromToml } from '@/core/tomlCodec';
 import { generateWiresFromSignals, type WireGenerationReport } from '@/core/wireGeneration';
 import { toFlowEdges, toFlowNodes } from '@/core/graphAdapter';
 import { countNodes, countSegments, countWires } from '@/core/harnessSelectors';
@@ -45,6 +46,30 @@ export function AppShell({
   onSelectionChange
 }: AppShellProps) {
   const [wireGenerationReport, setWireGenerationReport] = useState<WireGenerationReport | null>(null);
+
+  const handleExportDocument = () => {
+    const toml = exportHarnessToToml(document);
+    const blob = new Blob([toml], { type: 'text/toml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = globalThis.document.createElement('a');
+    link.href = url;
+    link.download = `${document.name || 'harness'}.toml`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportDocument = async (file: File) => {
+    try {
+      const text = await file.text();
+      const importedDocument = importHarnessFromToml(text);
+      onDocumentChange(importedDocument);
+      onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [] });
+      onUiStateChange({ collapsedConnectorIds: {} });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown TOML import error.';
+      window.alert(`Import failed: ${message}`);
+    }
+  };
 
   const connectorCallbacks = useMemo(
     () => ({
@@ -125,7 +150,7 @@ export function AppShell({
 
   return (
     <div className="flex h-full flex-col">
-      <TopBar />
+      <TopBar onImport={handleImportDocument} onExport={handleExportDocument} />
       <div className="grid min-h-0 flex-1 grid-cols-[280px_1fr_320px] gap-3 p-3">
         <LeftSidebar
           summary={summary}
