@@ -9,9 +9,11 @@ type LeftSidebarProps = {
     edgeCount: number;
   };
   onAddNode: (kind: TominalNodeKind) => void;
+  onCreateSegment: () => void;
+  canCreateSegment: boolean;
 };
 
-export function LeftSidebar({ summary, onAddNode }: LeftSidebarProps) {
+export function LeftSidebar({ summary, onAddNode, onCreateSegment, canCreateSegment }: LeftSidebarProps) {
   return (
     <aside className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
       <h2 className="text-sm font-medium text-muted-foreground">Palette</h2>
@@ -27,6 +29,9 @@ export function LeftSidebar({ summary, onAddNode }: LeftSidebarProps) {
         <Button className="justify-start" onClick={() => onAddNode('splice')} variant="secondary">
           <Split className="mr-2 h-4 w-4" />
           Add Splice
+        </Button>
+        <Button className="justify-start" disabled={!canCreateSegment} onClick={onCreateSegment} variant="secondary">
+          Create Segment (2 selected nodes)
         </Button>
       </div>
 

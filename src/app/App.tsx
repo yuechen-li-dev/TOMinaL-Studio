@@ -1,27 +1,20 @@
-import { useMemo, useState } from 'react';
-import type { Edge, Node } from '@xyflow/react';
+import { useState } from 'react';
 
 import { AppShell } from '@/app/layout/AppShell';
-import { buildSampleGraph } from '@/flow/sampleGraph';
-import type { TominalEdgeData, TominalNodeData } from '@/flow/flowTypes';
+import { createSampleHarnessDocument, type HarnessDocument } from '@/core/harnessModel';
 
-export type SelectionState =
-  | { type: 'node'; item: Node<TominalNodeData> }
-  | { type: 'edge'; item: Edge<TominalEdgeData> }
-  | null;
+export type SelectionState = {
+  selectedNodeIds: string[];
+  selectedSegmentIds: string[];
+};
 
 function App() {
-  const initial = useMemo(() => buildSampleGraph(), []);
-  const [selection, setSelection] = useState<SelectionState>(null);
+  const [document, setDocument] = useState<HarnessDocument>(() => createSampleHarnessDocument());
+  const [selection, setSelection] = useState<SelectionState>({ selectedNodeIds: [], selectedSegmentIds: [] });
 
   return (
     <div className="h-screen bg-background text-foreground">
-      <AppShell
-        initialNodes={initial.nodes}
-        initialEdges={initial.edges}
-        selection={selection}
-        onSelectionChange={setSelection}
-      />
+      <AppShell document={document} onDocumentChange={setDocument} selection={selection} onSelectionChange={setSelection} />
     </div>
   );
 }
