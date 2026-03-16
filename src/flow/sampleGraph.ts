@@ -31,21 +31,21 @@ export function buildSampleGraph(): { nodes: TominalNode[]; edges: TominalSegmen
   const edges: TominalSegment[] = [
     {
       id: 'SEG_MAIN_LEFT',
-      type: 'harness',
+      type: 'default',
       source: 'ECU_C1',
       target: 'B1',
       data: { modelId: 'SEG_MAIN_LEFT', label: 'SEG_MAIN_LEFT', geometry: 'spline', nominalLengthMm: 320 }
     },
     {
       id: 'SEG_MAIN_RIGHT',
-      type: 'harness',
+      type: 'default',
       source: 'B1',
       target: 'CLUSTER_C1',
       data: { modelId: 'SEG_MAIN_RIGHT', geometry: 'spline', nominalLengthMm: 330 }
     },
     {
       id: 'SEG_DROP_1',
-      type: 'harness',
+      type: 'default',
       source: 'B1',
       sourceHandle: 'branch-out',
       target: 'S1',
