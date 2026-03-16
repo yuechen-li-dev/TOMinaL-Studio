@@ -1,52 +1,47 @@
+import { useCallback, useEffect, useState } from 'react';
 import {
-  addEdge,
   Background,
   ConnectionMode,
   Controls,
   MiniMap,
   ReactFlow,
+  applyEdgeChanges,
+  applyNodeChanges,
   type Edge,
   type EdgeChange,
   type Node,
-  type NodeChange,
-  type OnConnect
+  type NodeChange
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import type { SelectionState } from '@/app/App';
+import type { XY } from '@/core/harnessModel';
 import { edgeTypes } from '@/flow/edgeTypes';
-import type { TominalEdgeData, TominalNodeData } from '@/flow/flowTypes';
+import type { TominalNodeData, TominalSegmentData } from '@/flow/flowTypes';
 import { nodeTypes } from '@/flow/nodeTypes';
 
 type FlowCanvasProps = {
   nodes: Node<TominalNodeData>[];
-  edges: Edge<TominalEdgeData>[];
-  onNodesChange: (changes: NodeChange<Node<TominalNodeData>>[]) => void;
-  onEdgesChange: (changes: EdgeChange<Edge<TominalEdgeData>>[]) => void;
-  setEdges: React.Dispatch<React.SetStateAction<Edge<TominalEdgeData>[]>>;
+  segments: Edge<TominalSegmentData>[];
+  onMoveNode: (nodeId: string, position: XY) => void;
   onSelectionChange: (selection: SelectionState) => void;
 };
 
-export function FlowCanvas({
-  nodes,
-  edges,
-  onNodesChange,
-  onEdgesChange,
-  setEdges,
-  onSelectionChange
-}: FlowCanvasProps) {
-  const onConnect: OnConnect = (connection) => {
-    setEdges((eds) =>
-      addEdge(
-        {
-          ...connection,
-          id: `E_${connection.source}_${connection.target}_${eds.length + 1}`,
-          type: 'harness'
-        },
-        eds
-      )
-    );
-  };
+export function FlowCanvas({ nodes, segments, onMoveNode, onSelectionChange }: FlowCanvasProps) {
+  const [uiNodes, setUiNodes] = useState(nodes);
+  const [uiEdges, setUiEdges] = useState(segments);
+
+  useEffect(() => setUiNodes(nodes), [nodes]);
+  useEffect(() => setUiEdges(segments), [segments]);
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange<Node<TominalNodeData>>[]) => setUiNodes((current) => applyNodeChanges(changes, current)),
+    []
+  );
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange<Edge<TominalSegmentData>>[]) => setUiEdges((current) => applyEdgeChanges(changes, current)),
+    []
+  );
 
   return (
     <main className="min-h-0 overflow-hidden rounded-xl border border-border/70 bg-white shadow-sm">
@@ -55,15 +50,19 @@ export function FlowCanvas({
         connectionMode={ConnectionMode.Loose}
         defaultEdgeOptions={{ type: 'harness' }}
         edgeTypes={edgeTypes}
-        edges={edges}
+        edges={uiEdges}
         nodeTypes={nodeTypes}
-        nodes={nodes}
-        onConnect={onConnect}
+        nodes={uiNodes}
         onEdgesChange={onEdgesChange}
-        onNodeClick={(_, node) => onSelectionChange({ type: 'node', item: node })}
+        onNodeDragStop={(_, node) => onMoveNode(node.id, [node.position.x, node.position.y])}
         onNodesChange={onNodesChange}
-        onEdgeClick={(_, edge) => onSelectionChange({ type: 'edge', item: edge })}
-        onPaneClick={() => onSelectionChange(null)}
+        onSelectionChange={(selection) =>
+          onSelectionChange({
+            selectedNodeIds: (selection.nodes ?? []).map((node) => node.id),
+            selectedSegmentIds: (selection.edges ?? []).map((edge) => edge.id)
+          })
+        }
+        onPaneClick={() => onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [] })}
       >
         <Background color="#dbe4ef" gap={20} size={1} />
         <MiniMap className="!bg-slate-100" nodeColor="#94a3b8" pannable zoomable />

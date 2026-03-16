@@ -1,8 +1,8 @@
 import { BaseEdge, getSmoothStepPath, type Edge, type EdgeProps } from '@xyflow/react';
 
-import type { TominalEdgeData } from '@/flow/flowTypes';
+import type { TominalSegmentData } from '@/flow/flowTypes';
 
-type TominalRFEdge = Edge<TominalEdgeData>;
+type TominalRFEdge = Edge<TominalSegmentData>;
 
 function HarnessEdge({
   sourceX,
