@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { SelectionState, UiState } from '@/app/App';
 import { LeftSidebar } from '@/app/layout/LeftSidebar';
@@ -19,6 +19,7 @@ import {
   updateWire
 } from '@/core/harnessMutations';
 import type { ConnectorPin, HarnessDocument, XY } from '@/core/harnessModel';
+import { generateWiresFromSignals, type WireGenerationReport } from '@/core/wireGeneration';
 import { toFlowEdges, toFlowNodes } from '@/core/graphAdapter';
 import { countNodes, countSegments, countWires } from '@/core/harnessSelectors';
 import { FlowCanvas } from '@/flow/FlowCanvas';
@@ -43,6 +44,8 @@ export function AppShell({
   selection,
   onSelectionChange
 }: AppShellProps) {
+  const [wireGenerationReport, setWireGenerationReport] = useState<WireGenerationReport | null>(null);
+
   const connectorCallbacks = useMemo(
     () => ({
       onToggleCollapse: (connectorId: string) => {
@@ -112,6 +115,14 @@ export function AppShell({
     onDocumentChange((current) => addSegment(current, { from, to, geometry: 'spline' }));
   };
 
+  const handleGenerateWiresFromSignals = () => {
+    onDocumentChange((current) => {
+      const { document: nextDocument, report } = generateWiresFromSignals(current);
+      setWireGenerationReport(report);
+      return nextDocument;
+    });
+  };
+
   return (
     <div className="flex h-full flex-col">
       <TopBar />
@@ -121,6 +132,8 @@ export function AppShell({
           onAddNode={handleAddNode}
           onCreateSegment={handleCreateSegment}
           canCreateSegment={canCreateSegment}
+          onGenerateWiresFromSignals={handleGenerateWiresFromSignals}
+          wireGenerationReport={wireGenerationReport}
         />
         <FlowCanvas
           nodes={nodes}

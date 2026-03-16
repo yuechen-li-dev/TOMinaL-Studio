@@ -1,6 +1,7 @@
-import { GitBranchPlus, PlusCircle, Split } from 'lucide-react';
+import { GitBranchPlus, PlusCircle, Split, WandSparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import type { WireGenerationReport } from '@/core/wireGeneration';
 import type { TominalNodeKind } from '@/flow/flowTypes';
 
 type LeftSidebarProps = {
@@ -12,9 +13,18 @@ type LeftSidebarProps = {
   onAddNode: (kind: TominalNodeKind) => void;
   onCreateSegment: () => void;
   canCreateSegment: boolean;
+  onGenerateWiresFromSignals: () => void;
+  wireGenerationReport: WireGenerationReport | null;
 };
 
-export function LeftSidebar({ summary, onAddNode, onCreateSegment, canCreateSegment }: LeftSidebarProps) {
+export function LeftSidebar({
+  summary,
+  onAddNode,
+  onCreateSegment,
+  canCreateSegment,
+  onGenerateWiresFromSignals,
+  wireGenerationReport
+}: LeftSidebarProps) {
   return (
     <aside className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
       <h2 className="text-sm font-medium text-muted-foreground">Palette</h2>
@@ -34,6 +44,10 @@ export function LeftSidebar({ summary, onAddNode, onCreateSegment, canCreateSegm
         <Button className="justify-start" disabled={!canCreateSegment} onClick={onCreateSegment} variant="secondary">
           Create Segment (2 selected nodes)
         </Button>
+        <Button className="justify-start" onClick={onGenerateWiresFromSignals} variant="default">
+          <WandSparkles className="mr-2 h-4 w-4" />
+          Generate Wires From Signals
+        </Button>
       </div>
 
       <div className="mt-8 space-y-2 rounded-lg border border-border/70 bg-muted/30 p-3">
@@ -43,6 +57,22 @@ export function LeftSidebar({ summary, onAddNode, onCreateSegment, canCreateSegm
         <p className="text-sm text-muted-foreground">Segments: {summary.edgeCount}</p>
         <p className="text-sm text-muted-foreground">Wires: {summary.wireCount}</p>
       </div>
+
+      {wireGenerationReport ? (
+        <div className="mt-4 space-y-1 rounded-lg border border-border/70 bg-muted/30 p-3">
+          <h3 className="text-sm font-medium">Wire Generation Report</h3>
+          <p className="text-xs text-muted-foreground">Signals indexed: {wireGenerationReport.indexedSignalCount}</p>
+          <p className="text-xs text-muted-foreground">Wires generated: {wireGenerationReport.generatedWireCount}</p>
+          <p className="text-xs text-muted-foreground">
+            Skipped (non-pair): {wireGenerationReport.skippedNonPairSignals.length}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Skipped (already connected): {wireGenerationReport.skippedAlreadyConnectedSignals.length}
+          </p>
+          <p className="text-xs text-muted-foreground">Skipped (no route): {wireGenerationReport.skippedNoRouteSignals.length}</p>
+          <p className="text-xs text-muted-foreground">Ignored empty signal pins: {wireGenerationReport.ignoredEmptySignalPins}</p>
+        </div>
+      ) : null}
     </aside>
   );
 }
