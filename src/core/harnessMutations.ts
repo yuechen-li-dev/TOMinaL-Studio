@@ -3,7 +3,9 @@ import type {
   Connector,
   ConnectorPin,
   HarnessDocument,
+  PinRef,
   Segment,
+  Wire,
   SegmentGeometry,
   Splice,
   XY
@@ -55,6 +57,42 @@ function withSegmentDefaults(segment: Segment): Segment {
     geometry: segment.geometry ?? 'spline'
   };
 }
+
+
+function assertConnectorPinExists(doc: HarnessDocument, pinRef: PinRef): void {
+  const connector = doc.connectors[pinRef.connectorId];
+
+  if (!connector) {
+    throw new Error(`Unknown connector id: ${pinRef.connectorId}`);
+  }
+
+  if (!connector.pins[pinRef.pinId]) {
+    throw new Error(`Unknown pin id ${pinRef.pinId} on connector ${pinRef.connectorId}`);
+  }
+}
+
+function assertRouteSegmentsExist(doc: HarnessDocument, route: string[]): void {
+  route.forEach((segmentId) => {
+    if (!doc.segments[segmentId]) {
+      throw new Error(`Unknown segment id in route: ${segmentId}`);
+    }
+  });
+}
+
+function withWireDefaults(wire: Wire): Wire {
+  return {
+    ...wire,
+    route: wire.route ?? []
+  };
+}
+
+function normalizePinRef(pinRef: PinRef): PinRef {
+  return {
+    connectorId: pinRef.connectorId,
+    pinId: String(pinRef.pinId)
+  };
+}
+
 
 export function addConnector(doc: HarnessDocument, partial: Partial<Connector> = {}): HarnessDocument {
   const id = partial.id ?? nextId(getAllNodeIds(doc), 'CONN');
@@ -215,12 +253,19 @@ export function deleteNode(doc: HarnessDocument, nodeId: string): HarnessDocumen
     Object.entries(doc.segments).filter(([, segment]) => segment.from !== nodeId && segment.to !== nodeId)
   );
 
+  const wires = Object.fromEntries(
+    Object.entries(doc.wires).filter(
+      ([, wire]) => wire.from.connectorId !== nodeId && wire.to.connectorId !== nodeId
+    )
+  );
+
   return {
     ...doc,
     connectors,
     branches,
     splices,
-    segments
+    segments,
+    wires
   };
 }
 
@@ -232,9 +277,14 @@ export function deleteSegment(doc: HarnessDocument, segmentId: string): HarnessD
   const { [segmentId]: removed, ...segments } = doc.segments;
   void removed;
 
+  const wires = Object.fromEntries(
+    Object.entries(doc.wires).filter(([, wire]) => !wire.route.includes(segmentId))
+  );
+
   return {
     ...doc,
-    segments
+    segments,
+    wires
   };
 }
 
@@ -333,6 +383,18 @@ export function setConnectorPinCount(doc: HarnessDocument, connectorId: string, 
     nextPins[pinId] = existingPin ? { ...existingPin } : {};
   }
 
+  const wires = Object.fromEntries(
+    Object.entries(doc.wires).filter(([, wire]) => {
+      if (wire.from.connectorId === connectorId && !nextPins[wire.from.pinId]) {
+        return false;
+      }
+      if (wire.to.connectorId === connectorId && !nextPins[wire.to.pinId]) {
+        return false;
+      }
+      return true;
+    })
+  );
+
   return {
     ...doc,
     connectors: {
@@ -341,7 +403,8 @@ export function setConnectorPinCount(doc: HarnessDocument, connectorId: string, 
         ...connector,
         pins: nextPins
       }
-    }
+    },
+    wires
   };
 }
 
@@ -374,5 +437,80 @@ export function updateConnectorPin(
         }
       }
     }
+  };
+}
+
+
+export function addWire(doc: HarnessDocument, partial: Partial<Wire> = {}): HarnessDocument {
+  const id = partial.id ?? nextId(Object.keys(doc.wires), 'WIRE');
+
+  if (doc.wires[id]) {
+    throw new Error(`Wire id already exists: ${id}`);
+  }
+
+  const wire = withWireDefaults({
+    id,
+    from: normalizePinRef(partial.from ?? { connectorId: '', pinId: '1' }),
+    to: normalizePinRef(partial.to ?? { connectorId: '', pinId: '1' }),
+    route: [...(partial.route ?? [])],
+    color: partial.color,
+    gauge: partial.gauge,
+    material: partial.material,
+    terminalPartNumber: partial.terminalPartNumber,
+    notes: partial.notes
+  });
+
+  assertConnectorPinExists(doc, wire.from);
+  assertConnectorPinExists(doc, wire.to);
+  assertRouteSegmentsExist(doc, wire.route);
+
+  return {
+    ...doc,
+    wires: {
+      ...doc.wires,
+      [id]: wire
+    }
+  };
+}
+
+export function updateWire(doc: HarnessDocument, wireId: string, patch: Partial<Wire>): HarnessDocument {
+  const current = doc.wires[wireId];
+  if (!current) {
+    return doc;
+  }
+
+  const next = withWireDefaults({
+    ...current,
+    ...patch,
+    id: wireId,
+    from: normalizePinRef(patch.from ?? current.from),
+    to: normalizePinRef(patch.to ?? current.to),
+    route: [...(patch.route ?? current.route)]
+  });
+
+  assertConnectorPinExists(doc, next.from);
+  assertConnectorPinExists(doc, next.to);
+  assertRouteSegmentsExist(doc, next.route);
+
+  return {
+    ...doc,
+    wires: {
+      ...doc.wires,
+      [wireId]: next
+    }
+  };
+}
+
+export function deleteWire(doc: HarnessDocument, wireId: string): HarnessDocument {
+  if (!doc.wires[wireId]) {
+    return doc;
+  }
+
+  const { [wireId]: removed, ...wires } = doc.wires;
+  void removed;
+
+  return {
+    ...doc,
+    wires
   };
 }

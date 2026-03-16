@@ -1,4 +1,4 @@
-import type { Branch, Connector, HarnessDocument, Segment, Splice } from '@/core/harnessModel';
+import type { Branch, Connector, HarnessDocument, PinRef, Segment, Splice, Wire } from '@/core/harnessModel';
 
 export type HarnessNode = Connector | Branch | Splice;
 
@@ -34,4 +34,36 @@ export function countNodes(doc: HarnessDocument): number {
 
 export function countSegments(doc: HarnessDocument): number {
   return Object.keys(doc.segments).length;
+}
+
+
+export function getWireById(doc: HarnessDocument, wireId: string): Wire | undefined {
+  return doc.wires[wireId];
+}
+
+export function getAllWires(doc: HarnessDocument): Wire[] {
+  return Object.values(doc.wires);
+}
+
+export function countWires(doc: HarnessDocument): number {
+  return Object.keys(doc.wires).length;
+}
+
+export function getConnectorPins(doc: HarnessDocument, connectorId: string): Array<{ pinId: string }> {
+  const connector = doc.connectors[connectorId];
+  if (!connector) {
+    return [];
+  }
+
+  return Object.keys(connector.pins).map((pinId) => ({ pinId }));
+}
+
+export function listConnectorPinRefs(doc: HarnessDocument): PinRef[] {
+  return Object.values(doc.connectors).flatMap((connector) =>
+    Object.keys(connector.pins).map((pinId) => ({ connectorId: connector.id, pinId }))
+  );
+}
+
+export function formatPinRef(pinRef: PinRef): string {
+  return `${pinRef.connectorId}:${pinRef.pinId}`;
 }

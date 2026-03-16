@@ -7,6 +7,7 @@ type LeftSidebarProps = {
   summary: {
     nodeCount: number;
     edgeCount: number;
+    wireCount: number;
   };
   onAddNode: (kind: TominalNodeKind) => void;
   onCreateSegment: () => void;
@@ -40,6 +41,7 @@ export function LeftSidebar({ summary, onAddNode, onCreateSegment, canCreateSegm
         <p className="text-sm text-muted-foreground">Name: Tominal Demo</p>
         <p className="text-sm text-muted-foreground">Nodes: {summary.nodeCount}</p>
         <p className="text-sm text-muted-foreground">Segments: {summary.edgeCount}</p>
+        <p className="text-sm text-muted-foreground">Wires: {summary.wireCount}</p>
       </div>
     </aside>
   );

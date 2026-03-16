@@ -49,6 +49,23 @@ export type Segment = {
   bundleDiameterMm?: number;
 };
 
+export type PinRef = {
+  connectorId: string;
+  pinId: string;
+};
+
+export type Wire = {
+  id: string;
+  from: PinRef;
+  to: PinRef;
+  route: string[];
+  color?: string;
+  gauge?: string;
+  material?: string;
+  terminalPartNumber?: string;
+  notes?: string;
+};
+
 export type HarnessDocument = {
   version: '0.1';
   name: string;
@@ -59,6 +76,7 @@ export type HarnessDocument = {
   branches: Record<string, Branch>;
   splices: Record<string, Splice>;
   segments: Record<string, Segment>;
+  wires: Record<string, Wire>;
 };
 
 export function createEmptyHarnessDocument(): HarnessDocument {
@@ -76,7 +94,8 @@ export function createEmptyHarnessDocument(): HarnessDocument {
     connectors: {},
     branches: {},
     splices: {},
-    segments: {}
+    segments: {},
+    wires: {}
   };
 }
 
@@ -156,6 +175,35 @@ export function createSampleHarnessDocument(): HarnessDocument {
         ],
         geometry: 'spline',
         nominalLengthMm: 200
+      }
+    },
+    wires: {
+      W_IGN_SW: {
+        id: 'W_IGN_SW',
+        from: { connectorId: 'ECU_C1', pinId: '1' },
+        to: { connectorId: 'CLUSTER_C1', pinId: '1' },
+        route: ['SEG_MAIN_LEFT', 'SEG_MAIN_RIGHT'],
+        color: 'PK',
+        gauge: '0.5 mm²',
+        material: 'TXL'
+      },
+      W_CAN_H: {
+        id: 'W_CAN_H',
+        from: { connectorId: 'ECU_C1', pinId: '2' },
+        to: { connectorId: 'CLUSTER_C1', pinId: '2' },
+        route: ['SEG_MAIN_LEFT', 'SEG_MAIN_RIGHT'],
+        color: 'GN',
+        gauge: '0.35 mm²',
+        material: 'TXL'
+      },
+      W_CAN_L: {
+        id: 'W_CAN_L',
+        from: { connectorId: 'ECU_C1', pinId: '3' },
+        to: { connectorId: 'CLUSTER_C1', pinId: '3' },
+        route: ['SEG_MAIN_LEFT', 'SEG_MAIN_RIGHT'],
+        color: 'YE',
+        gauge: '0.35 mm²',
+        material: 'TXL'
       }
     }
   };

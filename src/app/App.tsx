@@ -6,6 +6,7 @@ import { createSampleHarnessDocument, type HarnessDocument } from '@/core/harnes
 export type SelectionState = {
   selectedNodeIds: string[];
   selectedSegmentIds: string[];
+  selectedWireIds: string[];
 };
 
 export type UiState = {
@@ -14,7 +15,11 @@ export type UiState = {
 
 function App() {
   const [document, setDocument] = useState<HarnessDocument>(() => createSampleHarnessDocument());
-  const [selection, setSelection] = useState<SelectionState>({ selectedNodeIds: [], selectedSegmentIds: [] });
+  const [selection, setSelection] = useState<SelectionState>({
+    selectedNodeIds: [],
+    selectedSegmentIds: [],
+    selectedWireIds: []
+  });
   const [uiState, setUiState] = useState<UiState>({ collapsedConnectorIds: {} });
 
   return (
