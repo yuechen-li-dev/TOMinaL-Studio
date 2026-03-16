@@ -108,13 +108,11 @@ function ConnectorNode({ data }: NodeProps<TominalRFNode>) {
   );
 }
 
-function BranchNode({ data }: NodeProps<TominalRFNode>) {
+function BranchNode(_: NodeProps<TominalRFNode>) {
   return (
-    <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-amber-300 bg-amber-100 text-xs font-bold text-amber-900 shadow-sm">
-      <Handle className="!h-2 !w-2 !bg-amber-600" position={Position.Left} type="target" />
-      <Handle className="!h-2 !w-2 !bg-amber-600" position={Position.Right} type="source" />
-      <Handle className="!h-2 !w-2 !bg-amber-600" id="branch-out" position={Position.Bottom} type="source" />
-      {data.label}
+    <div className="relative h-5 w-5 rounded-full border border-amber-400 bg-amber-500 shadow-sm transition-shadow duration-150 selected:shadow-[0_0_0_4px_rgba(245,158,11,0.3)]">
+      <Handle className="!h-2 !w-2 !border-0 !bg-transparent !opacity-0" position={Position.Left} type="target" />
+      <Handle className="!h-2 !w-2 !border-0 !bg-transparent !opacity-0" id="branch-out" position={Position.Right} type="source" />
     </div>
   );
 }
