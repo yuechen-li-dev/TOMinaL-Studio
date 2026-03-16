@@ -1,6 +1,7 @@
 import type {
   Branch,
   Connector,
+  ConnectorPin,
   HarnessDocument,
   Segment,
   SegmentGeometry,
@@ -33,6 +34,15 @@ function nextId(existingIds: string[], prefix: string): string {
   return `${prefix}_${next}`;
 }
 
+
+function toClampedPinCount(pinCount: number): number {
+  if (!Number.isFinite(pinCount)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(pinCount));
+}
+
 function assertNodeExists(doc: HarnessDocument, nodeId: string): void {
   if (!getNodeById(doc, nodeId)) {
     throw new Error(`Unknown node id: ${nodeId}`);
@@ -56,7 +66,7 @@ export function addConnector(doc: HarnessDocument, partial: Partial<Connector> =
   const connector: Connector = {
     id,
     position: partial.position ?? defaultNodePosition,
-    pins: partial.pins ?? {},
+    pins: partial.pins ?? { '1': {} },
     ...partial
   };
 
@@ -302,6 +312,67 @@ export function updateSegment(doc: HarnessDocument, id: string, patch: Partial<S
     segments: {
       ...doc.segments,
       [id]: next
+    }
+  };
+}
+
+
+export function setConnectorPinCount(doc: HarnessDocument, connectorId: string, pinCount: number): HarnessDocument {
+  const connector = doc.connectors[connectorId];
+  if (!connector) {
+    return doc;
+  }
+
+  const targetCount = toClampedPinCount(pinCount);
+  const existingPins = connector.pins;
+  const nextPins: Record<string, ConnectorPin> = {};
+
+  for (let index = 0; index < targetCount; index += 1) {
+    const pinId = String(index + 1);
+    const existingPin = existingPins[pinId];
+    nextPins[pinId] = existingPin ? { ...existingPin } : {};
+  }
+
+  return {
+    ...doc,
+    connectors: {
+      ...doc.connectors,
+      [connectorId]: {
+        ...connector,
+        pins: nextPins
+      }
+    }
+  };
+}
+
+export function updateConnectorPin(
+  doc: HarnessDocument,
+  connectorId: string,
+  pinId: string,
+  patch: Partial<ConnectorPin>
+): HarnessDocument {
+  const connector = doc.connectors[connectorId];
+  if (!connector) {
+    return doc;
+  }
+
+  const normalizedPinId = String(pinId);
+  const currentPin = connector.pins[normalizedPinId] ?? {};
+
+  return {
+    ...doc,
+    connectors: {
+      ...doc.connectors,
+      [connectorId]: {
+        ...connector,
+        pins: {
+          ...connector.pins,
+          [normalizedPinId]: {
+            ...currentPin,
+            ...patch
+          }
+        }
+      }
     }
   };
 }

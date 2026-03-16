@@ -35,6 +35,8 @@ export function RightInspector({ document, selection, onSegmentNominalLengthChan
               <>
                 <dt className="text-muted-foreground">part number</dt>
                 <dd className="font-medium">{document.connectors[selectedNodeId]?.partNumber ?? '—'}</dd>
+                <dt className="text-muted-foreground">pin count</dt>
+                <dd className="font-medium">{Object.keys(document.connectors[selectedNodeId]?.pins ?? {}).length}</dd>
               </>
             )}
             {selectedNodeKind === 'branch' && (

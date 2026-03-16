@@ -1,19 +1,47 @@
 import type { Edge, Node } from '@xyflow/react';
 
-import type { HarnessDocument } from '@/core/harnessModel';
+import type { ConnectorPin, HarnessDocument } from '@/core/harnessModel';
 import type { TominalNodeData, TominalSegmentData } from '@/flow/flowTypes';
 
-export function toFlowNodes(doc: HarnessDocument): Node<TominalNodeData>[] {
-  const connectorNodes: Node<TominalNodeData>[] = Object.values(doc.connectors).map((connector) => ({
-    id: connector.id,
-    type: 'connector',
-    position: { x: connector.position[0], y: connector.position[1] },
-    data: {
-      label: connector.id,
-      kind: 'connector',
-      modelId: connector.id
-    }
-  }));
+type ConnectorNodeCallbacks = {
+  onToggleCollapse: (connectorId: string) => void;
+  onPartNumberChange: (connectorId: string, partNumber: string) => void;
+  onPinCountChange: (connectorId: string, pinCount: number) => void;
+  onPinChange: (connectorId: string, pinId: string, patch: Partial<ConnectorPin>) => void;
+};
+
+type ToFlowNodesOptions = {
+  collapsedConnectorIds: Record<string, boolean>;
+  connectorCallbacks: ConnectorNodeCallbacks;
+};
+
+function sortPinIds(pins: Record<string, ConnectorPin>): string[] {
+  return Object.keys(pins).sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10));
+}
+
+export function toFlowNodes(doc: HarnessDocument, options: ToFlowNodesOptions): Node<TominalNodeData>[] {
+  const { collapsedConnectorIds, connectorCallbacks } = options;
+
+  const connectorNodes: Node<TominalNodeData>[] = Object.values(doc.connectors).map((connector) => {
+    const pinRows = sortPinIds(connector.pins).map((pinId) => ({ pinId, pin: connector.pins[pinId] }));
+
+    return {
+      id: connector.id,
+      type: 'connector',
+      dragHandle: '.connector-node__drag-handle',
+      position: { x: connector.position[0], y: connector.position[1] },
+      data: {
+        label: connector.id,
+        kind: 'connector',
+        modelId: connector.id,
+        partNumber: connector.partNumber,
+        pinCount: pinRows.length,
+        pinRows,
+        isCollapsed: collapsedConnectorIds[connector.id] ?? true,
+        ...connectorCallbacks
+      }
+    };
+  });
 
   const branchNodes: Node<TominalNodeData>[] = Object.values(doc.branches).map((branch) => ({
     id: branch.id,
