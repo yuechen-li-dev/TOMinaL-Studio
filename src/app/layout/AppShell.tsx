@@ -230,9 +230,11 @@ export function AppShell({
           wireTypeOptions={wireTypeOptions}
         />
       </div>
-      <div className={activeTab === 'material-catalog' ? 'min-h-0 flex-1' : 'hidden min-h-0 flex-1'}>
-        <MaterialCatalogView onCatalogChange={setCatalog} />
-      </div>
+      {activeTab === 'material-catalog' && (
+        <div className="min-h-0 flex-1">
+          <MaterialCatalogView onCatalogChange={setCatalog} />
+        </div>
+      )}
     </div>
   );
 }
