@@ -16,9 +16,7 @@ import {
 type RightInspectorProps = {
   document: HarnessDocument;
   selection: SelectionState;
-  onSelectionChange: (selection: SelectionState) => void;
   onSegmentNominalLengthChange: (segmentId: string, nominalLengthMm: number | undefined) => void;
-  onWireAdd: () => void;
   onWireDelete: (wireId: string) => void;
   onWireChange: (wireId: string, patch: Partial<Wire>) => void;
 };
@@ -75,9 +73,7 @@ function downloadCutListCsv(harnessDocument: HarnessDocument): void {
 export function RightInspector({
   document,
   selection,
-  onSelectionChange,
   onSegmentNominalLengthChange,
-  onWireAdd,
   onWireDelete,
   onWireChange
 }: RightInspectorProps) {
@@ -101,29 +97,6 @@ export function RightInspector({
       <h2 className="text-sm font-medium text-muted-foreground">Inspector</h2>
 
       <section className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-3 text-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-medium">Wires</h3>
-          <Button onClick={onWireAdd} size="sm" variant="secondary">
-            Add Wire
-          </Button>
-        </div>
-        <ul className="space-y-1">
-          {wires.map((wire) => (
-            <li key={wire.id}>
-              <button
-                aria-pressed={selectedWireId === wire.id}
-                className="w-full rounded border border-border/70 bg-background px-2 py-1 text-left hover:bg-muted aria-pressed:border-primary/50 aria-pressed:bg-primary/10"
-                onClick={() => onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [wire.id] })}
-                type="button"
-              >
-                <span className="font-medium">{wire.id}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mt-3 rounded-lg border border-border/70 bg-muted/20 p-3 text-sm">
         <h3 className="font-medium">Properties</h3>
         <div className="mt-3">
           {!hasSelection && (
