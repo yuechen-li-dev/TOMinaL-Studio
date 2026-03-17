@@ -264,6 +264,7 @@ function AccessoryMaterialsSection({
   accessoryItems: AccessoryMaterialItem[];
   onAccessoryItemsChange: Dispatch<SetStateAction<AccessoryMaterialItem[]>>;
 }) {
+  const [isAdding, setIsAdding] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<AccessoryMaterialForm>(emptyAccessoryMaterialForm);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -278,6 +279,11 @@ function AccessoryMaterialsSection({
     setEditingItemId(null);
     setDraft(emptyAccessoryMaterialForm);
     setValidationError(null);
+  };
+
+  const handleCancel = () => {
+    resetEditor();
+    setIsAdding(false);
   };
 
   const handleSave = () => {
@@ -312,9 +318,11 @@ function AccessoryMaterialsSection({
     });
 
     resetEditor();
+    setIsAdding(false);
   };
 
   const handleEdit = (item: AccessoryMaterialItem) => {
+    setIsAdding(true);
     setEditingItemId(item.id);
     setDraft(mapAccessoryMaterialItemToForm(item));
     setValidationError(null);
@@ -332,12 +340,13 @@ function AccessoryMaterialsSection({
     <section className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Accessory Materials</h2>
-        <Button type="button" size="sm" onClick={resetEditor}>
-          Add Accessory
+        <Button type="button" size="sm" onClick={isAdding ? handleCancel : () => setIsAdding(true)}>
+          {isAdding ? 'Cancel' : 'New Accessory'}
         </Button>
       </div>
 
-      <div className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-2">
+      {isAdding ? (
+        <div className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-2">
         <label className="text-xs font-medium text-muted-foreground">
           ID
           <input
@@ -390,16 +399,17 @@ function AccessoryMaterialsSection({
           <Button type="button" size="sm" onClick={handleSave}>
             {isEditing ? 'Update Accessory' : 'Add Accessory'}
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={resetEditor}>
-            Clear
+          <Button type="button" size="sm" variant="outline" onClick={handleCancel}>
+            Cancel
           </Button>
         </div>
         {validationError ? <p className="text-xs text-destructive md:col-span-2">{validationError}</p> : null}
       </div>
+      ) : null}
 
       {accessoryItems.length === 0 ? (
         <div className="mt-3 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
-          No accessory materials yet. Add accessory entries to build this catalog section.
+          No accessory materials yet. Click “New Accessory” to add one.
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-md border border-border">
@@ -451,6 +461,7 @@ function WireTypesSection({
   wireTypeItems: WireTypeItem[];
   onWireTypeItemsChange: Dispatch<SetStateAction<WireTypeItem[]>>;
 }) {
+  const [isAdding, setIsAdding] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<WireTypeForm>(emptyWireTypeForm);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -465,6 +476,11 @@ function WireTypesSection({
     setEditingItemId(null);
     setDraft(emptyWireTypeForm);
     setValidationError(null);
+  };
+
+  const handleCancel = () => {
+    resetEditor();
+    setIsAdding(false);
   };
 
   const handleSave = () => {
@@ -500,9 +516,11 @@ function WireTypesSection({
     });
 
     resetEditor();
+    setIsAdding(false);
   };
 
   const handleEdit = (item: WireTypeItem) => {
+    setIsAdding(true);
     setEditingItemId(item.id);
     setDraft(mapWireTypeItemToForm(item));
     setValidationError(null);
@@ -520,12 +538,13 @@ function WireTypesSection({
     <section className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Wire Types</h2>
-        <Button type="button" size="sm" onClick={resetEditor}>
-          Add Wire Type
+        <Button type="button" size="sm" onClick={isAdding ? handleCancel : () => setIsAdding(true)}>
+          {isAdding ? 'Cancel' : 'New Wire Type'}
         </Button>
       </div>
 
-      <div className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-2">
+      {isAdding ? (
+        <div className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-2">
         <label className="text-xs font-medium text-muted-foreground">
           ID
           <input
@@ -586,16 +605,17 @@ function WireTypesSection({
           <Button type="button" size="sm" onClick={handleSave}>
             {isEditing ? 'Update Wire Type' : 'Add Wire Type'}
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={resetEditor}>
-            Clear
+          <Button type="button" size="sm" variant="outline" onClick={handleCancel}>
+            Cancel
           </Button>
         </div>
         {validationError ? <p className="text-xs text-destructive md:col-span-2">{validationError}</p> : null}
       </div>
+      ) : null}
 
       {wireTypeItems.length === 0 ? (
         <div className="mt-3 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
-          No wire types yet. Add wire type entries to build this catalog section.
+          No wire types yet. Click “New Wire Type” to add one.
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-md border border-border">
@@ -649,6 +669,7 @@ function RingTerminalSection({
   ringTerminalItems: RingTerminalItem[];
   onRingTerminalItemsChange: Dispatch<SetStateAction<RingTerminalItem[]>>;
 }) {
+  const [isAdding, setIsAdding] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<RingTerminalForm>(emptyRingTerminalForm);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -663,6 +684,11 @@ function RingTerminalSection({
     setEditingItemId(null);
     setDraft(emptyRingTerminalForm);
     setValidationError(null);
+  };
+
+  const handleCancel = () => {
+    resetEditor();
+    setIsAdding(false);
   };
 
   const handleSave = () => {
@@ -697,9 +723,11 @@ function RingTerminalSection({
     });
 
     resetEditor();
+    setIsAdding(false);
   };
 
   const handleEdit = (item: RingTerminalItem) => {
+    setIsAdding(true);
     setEditingItemId(item.id);
     setDraft(mapRingTerminalItemToForm(item));
     setValidationError(null);
@@ -717,12 +745,13 @@ function RingTerminalSection({
     <section className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Ring Terminals</h2>
-        <Button type="button" size="sm" onClick={resetEditor}>
-          Add Ring Terminal
+        <Button type="button" size="sm" onClick={isAdding ? handleCancel : () => setIsAdding(true)}>
+          {isAdding ? 'Cancel' : 'New Ring Terminal'}
         </Button>
       </div>
 
-      <div className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-2">
+      {isAdding ? (
+        <div className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-2">
         <label className="text-xs font-medium text-muted-foreground">
           ID
           <input
@@ -791,16 +820,17 @@ function RingTerminalSection({
           <Button type="button" size="sm" onClick={handleSave}>
             {isEditing ? 'Update Ring Terminal' : 'Add Ring Terminal'}
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={resetEditor}>
-            Clear
+          <Button type="button" size="sm" variant="outline" onClick={handleCancel}>
+            Cancel
           </Button>
         </div>
         {validationError ? <p className="text-xs text-destructive md:col-span-2">{validationError}</p> : null}
       </div>
+      ) : null}
 
       {ringTerminalItems.length === 0 ? (
         <div className="mt-3 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
-          No ring terminals yet. Add ring terminal entries to build this catalog section.
+          No ring terminals yet. Click “New Ring Terminal” to add one.
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-md border border-border">
@@ -856,6 +886,7 @@ function ConnectorHousingSection({
   housingItems: ConnectorHousingItem[];
   onHousingItemsChange: Dispatch<SetStateAction<ConnectorHousingItem[]>>;
 }) {
+  const [isAdding, setIsAdding] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedHousingId, setSelectedHousingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ConnectorHousingForm>(emptyHousingForm);
@@ -906,6 +937,11 @@ function ConnectorHousingSection({
     setEditingItemId(null);
     setDraft(emptyHousingForm);
     setHousingValidationError(null);
+  };
+
+  const handleCancel = () => {
+    resetEditor();
+    setIsAdding(false);
   };
 
   const updateSelectedHousing = (updater: (item: ConnectorHousingItem) => ConnectorHousingItem) => {
@@ -967,9 +1003,11 @@ function ConnectorHousingSection({
 
     setSelectedHousingId(nextItem.id);
     resetEditor();
+    setIsAdding(false);
   };
 
   const handleEditHousing = (item: ConnectorHousingItem) => {
+    setIsAdding(true);
     setEditingItemId(item.id);
     setSelectedHousingId(item.id);
     setDraft(mapHousingItemToForm(item));
@@ -1097,18 +1135,13 @@ function ConnectorHousingSection({
     <section className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Connector Housing</h2>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => {
-            resetEditor();
-          }}
-        >
-          Add Housing
+        <Button type="button" size="sm" onClick={isAdding ? handleCancel : () => setIsAdding(true)}>
+          {isAdding ? 'Cancel' : 'New Housing'}
         </Button>
       </div>
 
-      <div className="grid gap-3 rounded-md border border-border p-3">
+      {isAdding ? (
+        <div className="grid gap-3 rounded-md border border-border p-3">
         <div className="grid gap-2 md:grid-cols-2">
           <label className="text-xs font-medium text-muted-foreground">
             ID
@@ -1173,16 +1206,17 @@ function ConnectorHousingSection({
           <Button type="button" size="sm" onClick={handleSaveHousing}>
             {primaryActionLabel}
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={resetEditor}>
-            Clear
+          <Button type="button" size="sm" variant="outline" onClick={handleCancel}>
+            Cancel
           </Button>
         </div>
         {housingValidationError ? <p className="text-xs text-destructive">{housingValidationError}</p> : null}
       </div>
+      ) : null}
 
       {housingItems.length === 0 ? (
         <div className="mt-3 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
-          No connector housings yet. Add housing definitions to begin building the catalog.
+          No connector housings yet. Click “New Housing” to add one.
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-md border border-border">
