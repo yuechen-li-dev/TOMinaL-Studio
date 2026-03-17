@@ -9,18 +9,25 @@ export type ConnectorNodePinRow = {
   pin: ConnectorPin;
 };
 
+export type CatalogOption = {
+  id: string;
+  label: string;
+  secondary?: string;
+};
+
 export type TominalNodeData = {
   label: string;
   kind: TominalNodeKind;
   modelId: string;
   partNumber?: string;
   housingId?: string;
+  housingOptions?: CatalogOption[];
   pinCount?: number;
   pinRows?: ConnectorNodePinRow[];
   isCollapsed?: boolean;
   onToggleCollapse?: (connectorId: string) => void;
   onPartNumberChange?: (connectorId: string, partNumber: string) => void;
-  onHousingIdChange?: (connectorId: string, housingId: string) => void;
+  onHousingIdChange?: (connectorId: string, housingId: string | undefined) => void;
   onPinCountChange?: (connectorId: string, pinCount: number) => void;
   onPinChange?: (connectorId: string, pinId: string, patch: Partial<ConnectorPin>) => void;
 };

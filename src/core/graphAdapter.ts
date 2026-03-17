@@ -1,12 +1,12 @@
 import type { Edge, Node } from '@xyflow/react';
 
 import type { ConnectorPin, HarnessDocument } from '@/core/harnessModel';
-import type { TominalNodeData, TominalSegmentData } from '@/flow/flowTypes';
+import type { CatalogOption, TominalNodeData, TominalSegmentData } from '@/flow/flowTypes';
 
 type ConnectorNodeCallbacks = {
   onToggleCollapse: (connectorId: string) => void;
   onPartNumberChange: (connectorId: string, partNumber: string) => void;
-  onHousingIdChange: (connectorId: string, housingId: string) => void;
+  onHousingIdChange: (connectorId: string, housingId: string | undefined) => void;
   onPinCountChange: (connectorId: string, pinCount: number) => void;
   onPinChange: (connectorId: string, pinId: string, patch: Partial<ConnectorPin>) => void;
 };
@@ -14,6 +14,7 @@ type ConnectorNodeCallbacks = {
 type ToFlowNodesOptions = {
   collapsedConnectorIds: Record<string, boolean>;
   connectorCallbacks: ConnectorNodeCallbacks;
+  housingOptions: CatalogOption[];
 };
 
 function sortPinIds(pins: Record<string, ConnectorPin>): string[] {
@@ -21,7 +22,7 @@ function sortPinIds(pins: Record<string, ConnectorPin>): string[] {
 }
 
 export function toFlowNodes(doc: HarnessDocument, options: ToFlowNodesOptions): Node<TominalNodeData>[] {
-  const { collapsedConnectorIds, connectorCallbacks } = options;
+  const { collapsedConnectorIds, connectorCallbacks, housingOptions } = options;
 
   const connectorNodes: Node<TominalNodeData>[] = Object.values(doc.connectors).map((connector) => {
     const pinRows = sortPinIds(connector.pins).map((pinId) => ({ pinId, pin: connector.pins[pinId] }));
@@ -37,6 +38,7 @@ export function toFlowNodes(doc: HarnessDocument, options: ToFlowNodesOptions): 
         modelId: connector.id,
         partNumber: connector.partNumber,
         housingId: connector.housingId,
+        housingOptions,
         pinCount: pinRows.length,
         pinRows,
         isCollapsed: collapsedConnectorIds[connector.id] ?? true,
