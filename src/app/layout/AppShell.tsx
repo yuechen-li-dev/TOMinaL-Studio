@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 
+import { MaterialCatalogView } from '@/app/catalog/MaterialCatalogView';
 import type { SelectionState, UiState } from '@/app/App';
 import { LeftSidebar } from '@/app/layout/LeftSidebar';
 import { RightInspector } from '@/app/layout/RightInspector';
 import { TopBar } from '@/app/layout/TopBar';
+import { WorkspaceTabs, type WorkspaceTab } from '@/app/layout/WorkspaceTabs';
 import {
   addBranch,
   addConnector,
@@ -45,6 +47,7 @@ export function AppShell({
   onSelectionChange
 }: AppShellProps) {
   const [wireGenerationReport, setWireGenerationReport] = useState<WireGenerationReport | null>(null);
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>('graph');
 
   const handleExportDocument = () => {
     const toml = exportHarnessToToml(document);
@@ -150,7 +153,14 @@ export function AppShell({
   return (
     <div className="flex h-full flex-col">
       <TopBar onImport={handleImportDocument} onExport={handleExportDocument} />
-      <div className="grid min-h-0 flex-1 grid-cols-[280px_1fr_320px] gap-3 p-3">
+      <WorkspaceTabs selectedTab={activeTab} onTabChange={setActiveTab} />
+      <div
+        className={
+          activeTab === 'graph'
+            ? 'grid min-h-0 flex-1 grid-cols-[280px_1fr_320px] gap-3 p-3'
+            : 'hidden min-h-0 flex-1 grid-cols-[280px_1fr_320px] gap-3 p-3'
+        }
+      >
         <LeftSidebar
           summary={summary}
           onAddNode={handleAddNode}
@@ -177,6 +187,9 @@ export function AppShell({
           }}
           onWireChange={(wireId, patch) => onDocumentChange((current) => updateWire(current, wireId, patch))}
         />
+      </div>
+      <div className={activeTab === 'material-catalog' ? 'min-h-0 flex-1' : 'hidden min-h-0 flex-1'}>
+        <MaterialCatalogView />
       </div>
     </div>
   );
