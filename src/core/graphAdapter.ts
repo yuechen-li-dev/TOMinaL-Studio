@@ -6,6 +6,7 @@ import type { TominalNodeData, TominalSegmentData } from '@/flow/flowTypes';
 type ConnectorNodeCallbacks = {
   onToggleCollapse: (connectorId: string) => void;
   onPartNumberChange: (connectorId: string, partNumber: string) => void;
+  onHousingIdChange: (connectorId: string, housingId: string) => void;
   onPinCountChange: (connectorId: string, pinCount: number) => void;
   onPinChange: (connectorId: string, pinId: string, patch: Partial<ConnectorPin>) => void;
 };
@@ -35,6 +36,7 @@ export function toFlowNodes(doc: HarnessDocument, options: ToFlowNodesOptions): 
         kind: 'connector',
         modelId: connector.id,
         partNumber: connector.partNumber,
+        housingId: connector.housingId,
         pinCount: pinRows.length,
         pinRows,
         isCollapsed: collapsedConnectorIds[connector.id] ?? true,

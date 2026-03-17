@@ -87,6 +87,9 @@ export function AppShell({
       onPartNumberChange: (connectorId: string, partNumber: string) => {
         onDocumentChange((current) => updateConnector(current, connectorId, { partNumber: partNumber || undefined }));
       },
+      onHousingIdChange: (connectorId: string, housingId: string) => {
+        onDocumentChange((current) => updateConnector(current, connectorId, { housingId: housingId || undefined }));
+      },
       onPinCountChange: (connectorId: string, pinCount: number) => {
         onDocumentChange((current) => setConnectorPinCount(current, connectorId, pinCount));
       },
