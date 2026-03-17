@@ -9,7 +9,6 @@ import {
   addConnector,
   addSegment,
   addSplice,
-  addWire,
   deleteWire,
   moveNode,
   setConnectorPinCount,
@@ -169,42 +168,9 @@ export function AppShell({
         <RightInspector
           document={document}
           selection={selection}
-          onSelectionChange={onSelectionChange}
           onSegmentNominalLengthChange={(segmentId, nominalLengthMm) =>
             onDocumentChange((current) => updateSegment(current, segmentId, { nominalLengthMm }))
           }
-          onWireAdd={() => {
-            const connectorIds = Object.keys(document.connectors);
-            if (connectorIds.length === 0) {
-              return;
-            }
-
-            const fromConnectorId = connectorIds[0];
-            const toConnectorId = connectorIds[1] ?? connectorIds[0];
-            const fromPinId = Object.keys(document.connectors[fromConnectorId].pins)[0];
-            const toPinId = Object.keys(document.connectors[toConnectorId].pins)[0];
-            const defaultRoute = Object.keys(document.segments).slice(0, 2);
-
-            if (!fromPinId || !toPinId) {
-              return;
-            }
-
-            onDocumentChange((current) => {
-              const next = addWire(current, {
-                from: { connectorId: fromConnectorId, pinId: fromPinId },
-                to: { connectorId: toConnectorId, pinId: toPinId },
-                route: defaultRoute
-              });
-
-              const wireIds = Object.keys(next.wires);
-              const newestWireId = wireIds[wireIds.length - 1];
-              if (newestWireId) {
-                onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [newestWireId] });
-              }
-
-              return next;
-            });
-          }}
           onWireDelete={(wireId) => {
             onDocumentChange((current) => deleteWire(current, wireId));
             onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [] });
