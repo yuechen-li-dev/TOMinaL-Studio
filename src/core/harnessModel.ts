@@ -17,6 +17,7 @@ export type Connector = {
   id: string;
   kind?: string;
   partNumber?: string;
+  housingId?: string;
   description?: string;
   position: XY;
   rotationDeg?: number;
@@ -59,6 +60,7 @@ export type Wire = {
   from: PinRef;
   to: PinRef;
   route: string[];
+  wireTypeId?: string;
   slackMm?: number;
   color?: string;
   gauge?: string;

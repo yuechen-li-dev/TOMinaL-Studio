@@ -225,6 +225,13 @@ export function RightInspector({
                   value={selectedWire.material ?? ''}
                 />
 
+                <label className="text-muted-foreground">Wire Type ID</label>
+                <input
+                  className="rounded border border-border bg-background px-2 py-1"
+                  onChange={(event) => onWireChange(selectedWire.id, { wireTypeId: event.target.value || undefined })}
+                  value={selectedWire.wireTypeId ?? ''}
+                />
+
                 <label className="text-muted-foreground">Terminal P/N</label>
                 <input
                   className="rounded border border-border bg-background px-2 py-1"
@@ -265,6 +272,8 @@ export function RightInspector({
               <>
                 <dt className="text-muted-foreground">Part number</dt>
                 <dd className="font-medium">{document.connectors[selectedNodeId]?.partNumber ?? '—'}</dd>
+                <dt className="text-muted-foreground">Housing ID</dt>
+                <dd className="font-medium">{document.connectors[selectedNodeId]?.housingId ?? '—'}</dd>
                 <dt className="text-muted-foreground">Pin count</dt>
                 <dd className="font-medium">{Object.keys(document.connectors[selectedNodeId]?.pins ?? {}).length}</dd>
               </>

@@ -36,6 +36,9 @@ function ConnectorNode({ data }: NodeProps<TominalRFNode>) {
             <span className="font-medium">PN:</span> {data.partNumber || '—'}
           </p>
           <p>
+            <span className="font-medium">Housing:</span> {data.housingId || '—'}
+          </p>
+          <p>
             <span className="font-medium">Pins:</span> {pinCount}
           </p>
         </div>
@@ -48,6 +51,16 @@ function ConnectorNode({ data }: NodeProps<TominalRFNode>) {
               onChange={(event) => data.onPartNumberChange?.(connectorId, event.target.value)}
               onPointerDown={(event) => event.stopPropagation()}
               value={data.partNumber ?? ''}
+            />
+          </label>
+
+          <label className="grid grid-cols-[60px_1fr] items-center gap-1.5">
+            <span className="font-medium">Housing</span>
+            <input
+              className="nodrag h-6 rounded border border-blue-200 bg-white px-1.5 py-0.5 text-[10px]"
+              onChange={(event) => data.onHousingIdChange?.(connectorId, event.target.value)}
+              onPointerDown={(event) => event.stopPropagation()}
+              value={data.housingId ?? ''}
             />
           </label>
 
