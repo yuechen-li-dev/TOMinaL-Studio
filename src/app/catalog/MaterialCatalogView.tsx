@@ -1,5 +1,14 @@
 import { Fragment, useMemo, useState } from 'react';
 
+import {
+  validateAccessoryMaterial,
+  validateConnectorHousing,
+  validateConnectorPlug,
+  validateConnectorSeal,
+  validateConnectorTerminal,
+  validateRingTerminal,
+  validateWireType
+} from '@/catalog/validation';
 import { Button } from '@/components/ui/button';
 
 type ConnectorTerminalItem = {
@@ -242,10 +251,15 @@ function mapAccessoryMaterialItemToForm(item: AccessoryMaterialItem): AccessoryM
   };
 }
 
+function formatValidationErrors(errors: string[]): string {
+  return errors.join(' · ');
+}
+
 function AccessoryMaterialsSection() {
   const [accessoryItems, setAccessoryItems] = useState<AccessoryMaterialItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<AccessoryMaterialForm>(emptyAccessoryMaterialForm);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const isEditing = editingItemId !== null;
 
@@ -256,22 +270,30 @@ function AccessoryMaterialsSection() {
   const resetEditor = () => {
     setEditingItemId(null);
     setDraft(emptyAccessoryMaterialForm);
+    setValidationError(null);
   };
 
   const handleSave = () => {
-    if (!draft.id.trim() || !draft.partNumber.trim()) {
+    const notes = draft.notes.trim();
+
+    const validationResult = validateAccessoryMaterial({
+      id: draft.id,
+      partNumber: draft.partNumber,
+      manufacturer: draft.manufacturer,
+      description: draft.description,
+      category: draft.category,
+      notes
+    });
+
+    if (!validationResult.success) {
+      setValidationError(formatValidationErrors(validationResult.errors));
       return;
     }
 
-    const notes = draft.notes.trim();
-
+    setValidationError(null);
     const nextItem: AccessoryMaterialItem = {
-      id: draft.id.trim(),
-      partNumber: draft.partNumber.trim(),
-      manufacturer: draft.manufacturer.trim(),
-      description: draft.description.trim(),
-      category: draft.category.trim(),
-      notes: notes.length > 0 ? notes : undefined
+      ...validationResult.data,
+      notes: validationResult.data.notes && validationResult.data.notes.length > 0 ? validationResult.data.notes : undefined
     };
 
     setAccessoryItems((current) => {
@@ -288,6 +310,7 @@ function AccessoryMaterialsSection() {
   const handleEdit = (item: AccessoryMaterialItem) => {
     setEditingItemId(item.id);
     setDraft(mapAccessoryMaterialItemToForm(item));
+    setValidationError(null);
   };
 
   const handleDelete = (itemId: string) => {
@@ -364,6 +387,7 @@ function AccessoryMaterialsSection() {
             Clear
           </Button>
         </div>
+        {validationError ? <p className="text-xs text-destructive md:col-span-2">{validationError}</p> : null}
       </div>
 
       {accessoryItems.length === 0 ? (
@@ -417,6 +441,7 @@ function WireTypesSection() {
   const [wireTypeItems, setWireTypeItems] = useState<WireTypeItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<WireTypeForm>(emptyWireTypeForm);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const isEditing = editingItemId !== null;
 
@@ -427,23 +452,31 @@ function WireTypesSection() {
   const resetEditor = () => {
     setEditingItemId(null);
     setDraft(emptyWireTypeForm);
+    setValidationError(null);
   };
 
   const handleSave = () => {
-    if (!draft.id.trim() || !draft.partNumber.trim()) {
+    const notes = draft.notes.trim();
+
+    const validationResult = validateWireType({
+      id: draft.id,
+      partNumber: draft.partNumber,
+      manufacturer: draft.manufacturer,
+      description: draft.description,
+      gauge: draft.gauge,
+      insulationType: draft.insulationType,
+      notes
+    });
+
+    if (!validationResult.success) {
+      setValidationError(formatValidationErrors(validationResult.errors));
       return;
     }
 
-    const notes = draft.notes.trim();
-
+    setValidationError(null);
     const nextItem: WireTypeItem = {
-      id: draft.id.trim(),
-      partNumber: draft.partNumber.trim(),
-      manufacturer: draft.manufacturer.trim(),
-      description: draft.description.trim(),
-      gauge: draft.gauge.trim(),
-      insulationType: draft.insulationType.trim(),
-      notes: notes.length > 0 ? notes : undefined
+      ...validationResult.data,
+      notes: validationResult.data.notes && validationResult.data.notes.length > 0 ? validationResult.data.notes : undefined
     };
 
     setWireTypeItems((current) => {
@@ -460,6 +493,7 @@ function WireTypesSection() {
   const handleEdit = (item: WireTypeItem) => {
     setEditingItemId(item.id);
     setDraft(mapWireTypeItemToForm(item));
+    setValidationError(null);
   };
 
   const handleDelete = (itemId: string) => {
@@ -544,6 +578,7 @@ function WireTypesSection() {
             Clear
           </Button>
         </div>
+        {validationError ? <p className="text-xs text-destructive md:col-span-2">{validationError}</p> : null}
       </div>
 
       {wireTypeItems.length === 0 ? (
@@ -599,6 +634,7 @@ function RingTerminalSection() {
   const [ringTerminalItems, setRingTerminalItems] = useState<RingTerminalItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<RingTerminalForm>(emptyRingTerminalForm);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const isEditing = editingItemId !== null;
 
@@ -609,22 +645,30 @@ function RingTerminalSection() {
   const resetEditor = () => {
     setEditingItemId(null);
     setDraft(emptyRingTerminalForm);
+    setValidationError(null);
   };
 
   const handleSave = () => {
-    if (!draft.id.trim() || !draft.partNumber.trim()) {
+    const validationResult = validateRingTerminal({
+      id: draft.id,
+      partNumber: draft.partNumber,
+      manufacturer: draft.manufacturer,
+      description: draft.description,
+      compatibleWireGauge: draft.compatibleWireGauge,
+      crimpToolPartNumber: draft.crimpToolPartNumber,
+      studSize: draft.studSize,
+      notes: draft.notes
+    });
+
+    if (!validationResult.success) {
+      setValidationError(formatValidationErrors(validationResult.errors));
       return;
     }
 
+    setValidationError(null);
     const nextItem: RingTerminalItem = {
-      id: draft.id.trim(),
-      partNumber: draft.partNumber.trim(),
-      manufacturer: draft.manufacturer.trim(),
-      description: draft.description.trim(),
-      compatibleWireGauge: draft.compatibleWireGauge.trim(),
-      crimpToolPartNumber: draft.crimpToolPartNumber.trim(),
-      studSize: draft.studSize.trim(),
-      notes: draft.notes.trim()
+      ...validationResult.data,
+      notes: validationResult.data.notes ?? ''
     };
 
     setRingTerminalItems((current) => {
@@ -641,6 +685,7 @@ function RingTerminalSection() {
   const handleEdit = (item: RingTerminalItem) => {
     setEditingItemId(item.id);
     setDraft(mapRingTerminalItemToForm(item));
+    setValidationError(null);
   };
 
   const handleDelete = (itemId: string) => {
@@ -733,6 +778,7 @@ function RingTerminalSection() {
             Clear
           </Button>
         </div>
+        {validationError ? <p className="text-xs text-destructive md:col-span-2">{validationError}</p> : null}
       </div>
 
       {ringTerminalItems.length === 0 ? (
@@ -791,15 +837,19 @@ function ConnectorHousingSection() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedHousingId, setSelectedHousingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ConnectorHousingForm>(emptyHousingForm);
+  const [housingValidationError, setHousingValidationError] = useState<string | null>(null);
 
   const [editingTerminalId, setEditingTerminalId] = useState<string | null>(null);
   const [terminalDraft, setTerminalDraft] = useState<ConnectorTerminalForm>(emptyTerminalForm);
+  const [terminalValidationError, setTerminalValidationError] = useState<string | null>(null);
 
   const [editingSealId, setEditingSealId] = useState<string | null>(null);
   const [sealDraft, setSealDraft] = useState<ConnectorSealForm>(emptySealForm);
+  const [sealValidationError, setSealValidationError] = useState<string | null>(null);
 
   const [editingPlugId, setEditingPlugId] = useState<string | null>(null);
   const [plugDraft, setPlugDraft] = useState<ConnectorPlugForm>(emptyPlugForm);
+  const [plugValidationError, setPlugValidationError] = useState<string | null>(null);
 
   const isEditing = editingItemId !== null;
   const selectedHousing = useMemo(
@@ -821,15 +871,19 @@ function ConnectorHousingSection() {
   const resetNestedEditors = () => {
     setEditingTerminalId(null);
     setTerminalDraft(emptyTerminalForm);
+    setTerminalValidationError(null);
     setEditingSealId(null);
     setSealDraft(emptySealForm);
+    setSealValidationError(null);
     setEditingPlugId(null);
     setPlugDraft(emptyPlugForm);
+    setPlugValidationError(null);
   };
 
   const resetEditor = () => {
     setEditingItemId(null);
     setDraft(emptyHousingForm);
+    setHousingValidationError(null);
   };
 
   const updateSelectedHousing = (updater: (item: ConnectorHousingItem) => ConnectorHousingItem) => {
@@ -844,18 +898,29 @@ function ConnectorHousingSection() {
 
   const handleSaveHousing = () => {
     const cavityCount = Number.parseInt(draft.cavityCount, 10);
-    if (!draft.id.trim() || !draft.partNumber.trim() || Number.isNaN(cavityCount)) {
+
+    const validationResult = validateConnectorHousing({
+      id: draft.id,
+      partNumber: draft.partNumber,
+      manufacturer: draft.manufacturer,
+      description: draft.description,
+      family: draft.family,
+      cavityCount,
+      notes: draft.notes,
+      terminals: [],
+      seals: [],
+      plugs: []
+    });
+
+    if (!validationResult.success) {
+      setHousingValidationError(formatValidationErrors(validationResult.errors));
       return;
     }
 
+    setHousingValidationError(null);
     const nextItem: ConnectorHousingItem = {
-      id: draft.id.trim(),
-      partNumber: draft.partNumber.trim(),
-      manufacturer: draft.manufacturer.trim(),
-      description: draft.description.trim(),
-      family: draft.family.trim(),
-      cavityCount,
-      notes: draft.notes.trim(),
+      ...validationResult.data,
+      notes: validationResult.data.notes ?? '',
       terminals: [],
       seals: [],
       plugs: []
@@ -886,6 +951,7 @@ function ConnectorHousingSection() {
     setEditingItemId(item.id);
     setSelectedHousingId(item.id);
     setDraft(mapHousingItemToForm(item));
+    setHousingValidationError(null);
   };
 
   const handleDeleteHousing = (itemId: string) => {
@@ -902,17 +968,28 @@ function ConnectorHousingSection() {
   };
 
   const handleSaveTerminal = () => {
-    if (!selectedHousing || !terminalDraft.id.trim() || !terminalDraft.partNumber.trim()) {
+    if (!selectedHousing) {
       return;
     }
 
+    const validationResult = validateConnectorTerminal({
+      id: terminalDraft.id,
+      partNumber: terminalDraft.partNumber,
+      description: terminalDraft.description,
+      compatibleWireGauge: terminalDraft.compatibleWireGauge,
+      crimpToolPartNumber: terminalDraft.crimpToolPartNumber,
+      notes: terminalDraft.notes
+    });
+
+    if (!validationResult.success) {
+      setTerminalValidationError(formatValidationErrors(validationResult.errors));
+      return;
+    }
+
+    setTerminalValidationError(null);
     const nextTerminal: ConnectorTerminalItem = {
-      id: terminalDraft.id.trim(),
-      partNumber: terminalDraft.partNumber.trim(),
-      description: terminalDraft.description.trim(),
-      compatibleWireGauge: terminalDraft.compatibleWireGauge.trim(),
-      crimpToolPartNumber: terminalDraft.crimpToolPartNumber.trim(),
-      notes: terminalDraft.notes.trim()
+      ...validationResult.data,
+      notes: validationResult.data.notes ?? ''
     };
 
     updateSelectedHousing((item) => ({
@@ -925,18 +1002,30 @@ function ConnectorHousingSection() {
 
     setEditingTerminalId(null);
     setTerminalDraft(emptyTerminalForm);
+    setTerminalValidationError(null);
   };
 
   const handleSaveSeal = () => {
-    if (!selectedHousing || !sealDraft.id.trim() || !sealDraft.partNumber.trim()) {
+    if (!selectedHousing) {
       return;
     }
 
+    const validationResult = validateConnectorSeal({
+      id: sealDraft.id,
+      partNumber: sealDraft.partNumber,
+      description: sealDraft.description,
+      notes: sealDraft.notes
+    });
+
+    if (!validationResult.success) {
+      setSealValidationError(formatValidationErrors(validationResult.errors));
+      return;
+    }
+
+    setSealValidationError(null);
     const nextSeal: ConnectorSealItem = {
-      id: sealDraft.id.trim(),
-      partNumber: sealDraft.partNumber.trim(),
-      description: sealDraft.description.trim(),
-      notes: sealDraft.notes.trim()
+      ...validationResult.data,
+      notes: validationResult.data.notes ?? ''
     };
 
     updateSelectedHousing((item) => ({
@@ -946,18 +1035,30 @@ function ConnectorHousingSection() {
 
     setEditingSealId(null);
     setSealDraft(emptySealForm);
+    setSealValidationError(null);
   };
 
   const handleSavePlug = () => {
-    if (!selectedHousing || !plugDraft.id.trim() || !plugDraft.partNumber.trim()) {
+    if (!selectedHousing) {
       return;
     }
 
+    const validationResult = validateConnectorPlug({
+      id: plugDraft.id,
+      partNumber: plugDraft.partNumber,
+      description: plugDraft.description,
+      notes: plugDraft.notes
+    });
+
+    if (!validationResult.success) {
+      setPlugValidationError(formatValidationErrors(validationResult.errors));
+      return;
+    }
+
+    setPlugValidationError(null);
     const nextPlug: ConnectorPlugItem = {
-      id: plugDraft.id.trim(),
-      partNumber: plugDraft.partNumber.trim(),
-      description: plugDraft.description.trim(),
-      notes: plugDraft.notes.trim()
+      ...validationResult.data,
+      notes: validationResult.data.notes ?? ''
     };
 
     updateSelectedHousing((item) => ({
@@ -967,6 +1068,7 @@ function ConnectorHousingSection() {
 
     setEditingPlugId(null);
     setPlugDraft(emptyPlugForm);
+    setPlugValidationError(null);
   };
 
   return (
@@ -1053,6 +1155,7 @@ function ConnectorHousingSection() {
             Clear
           </Button>
         </div>
+        {housingValidationError ? <p className="text-xs text-destructive">{housingValidationError}</p> : null}
       </div>
 
       {housingItems.length === 0 ? (
@@ -1208,6 +1311,7 @@ function ConnectorHousingSection() {
                                 Clear
                               </Button>
                             </div>
+                            {terminalValidationError ? <p className="mt-2 text-xs text-destructive">{terminalValidationError}</p> : null}
                             {item.terminals.length === 0 ? (
                               <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-3 py-3 text-xs text-muted-foreground">
                                 No terminals for this housing yet.
@@ -1345,6 +1449,7 @@ function ConnectorHousingSection() {
                                 Clear
                               </Button>
                             </div>
+                            {sealValidationError ? <p className="mt-2 text-xs text-destructive">{sealValidationError}</p> : null}
                             {item.seals.length === 0 ? (
                               <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-3 py-3 text-xs text-muted-foreground">
                                 No seals for this housing yet.
@@ -1476,6 +1581,7 @@ function ConnectorHousingSection() {
                                 Clear
                               </Button>
                             </div>
+                            {plugValidationError ? <p className="mt-2 text-xs text-destructive">{plugValidationError}</p> : null}
                             {item.plugs.length === 0 ? (
                               <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-3 py-3 text-xs text-muted-foreground">
                                 No plugs for this housing yet.
