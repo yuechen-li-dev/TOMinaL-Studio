@@ -71,6 +71,28 @@ type ConnectorPlugForm = {
   notes: string;
 };
 
+type RingTerminalItem = {
+  id: string;
+  partNumber: string;
+  manufacturer: string;
+  description: string;
+  compatibleWireGauge: string;
+  crimpToolPartNumber: string;
+  studSize: string;
+  notes: string;
+};
+
+type RingTerminalForm = {
+  id: string;
+  partNumber: string;
+  manufacturer: string;
+  description: string;
+  compatibleWireGauge: string;
+  crimpToolPartNumber: string;
+  studSize: string;
+  notes: string;
+};
+
 type CatalogScaffoldSectionProps = {
   title: string;
   description: string;
@@ -110,6 +132,17 @@ const emptyPlugForm: ConnectorPlugForm = {
   notes: ''
 };
 
+const emptyRingTerminalForm: RingTerminalForm = {
+  id: '',
+  partNumber: '',
+  manufacturer: '',
+  description: '',
+  compatibleWireGauge: '',
+  crimpToolPartNumber: '',
+  studSize: '',
+  notes: ''
+};
+
 function CatalogScaffoldSection({ title, description, actionLabel }: CatalogScaffoldSectionProps) {
   return (
     <section className="rounded-lg border border-border bg-card p-4">
@@ -136,6 +169,210 @@ function mapHousingItemToForm(item: ConnectorHousingItem): ConnectorHousingForm 
     cavityCount: String(item.cavityCount),
     notes: item.notes
   };
+}
+
+function mapRingTerminalItemToForm(item: RingTerminalItem): RingTerminalForm {
+  return {
+    id: item.id,
+    partNumber: item.partNumber,
+    manufacturer: item.manufacturer,
+    description: item.description,
+    compatibleWireGauge: item.compatibleWireGauge,
+    crimpToolPartNumber: item.crimpToolPartNumber,
+    studSize: item.studSize,
+    notes: item.notes
+  };
+}
+
+function RingTerminalSection() {
+  const [ringTerminalItems, setRingTerminalItems] = useState<RingTerminalItem[]>([]);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<RingTerminalForm>(emptyRingTerminalForm);
+
+  const isEditing = editingItemId !== null;
+
+  const handleDraftChange = <K extends keyof RingTerminalForm>(key: K, value: RingTerminalForm[K]) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const resetEditor = () => {
+    setEditingItemId(null);
+    setDraft(emptyRingTerminalForm);
+  };
+
+  const handleSave = () => {
+    if (!draft.id.trim() || !draft.partNumber.trim()) {
+      return;
+    }
+
+    const nextItem: RingTerminalItem = {
+      id: draft.id.trim(),
+      partNumber: draft.partNumber.trim(),
+      manufacturer: draft.manufacturer.trim(),
+      description: draft.description.trim(),
+      compatibleWireGauge: draft.compatibleWireGauge.trim(),
+      crimpToolPartNumber: draft.crimpToolPartNumber.trim(),
+      studSize: draft.studSize.trim(),
+      notes: draft.notes.trim()
+    };
+
+    setRingTerminalItems((current) => {
+      if (editingItemId === null) {
+        return [...current, nextItem];
+      }
+
+      return current.map((item) => (item.id === editingItemId ? nextItem : item));
+    });
+
+    resetEditor();
+  };
+
+  const handleEdit = (item: RingTerminalItem) => {
+    setEditingItemId(item.id);
+    setDraft(mapRingTerminalItemToForm(item));
+  };
+
+  const handleDelete = (itemId: string) => {
+    setRingTerminalItems((current) => current.filter((item) => item.id !== itemId));
+
+    if (editingItemId === itemId) {
+      resetEditor();
+    }
+  };
+
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">Ring Terminals</h2>
+        <Button type="button" size="sm" onClick={resetEditor}>
+          Add Ring Terminal
+        </Button>
+      </div>
+
+      <div className="grid gap-2 rounded-md border border-border p-3 md:grid-cols-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          ID
+          <input
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.id}
+            onChange={(event) => handleDraftChange('id', event.target.value)}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Part Number
+          <input
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.partNumber}
+            onChange={(event) => handleDraftChange('partNumber', event.target.value)}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Manufacturer
+          <input
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.manufacturer}
+            onChange={(event) => handleDraftChange('manufacturer', event.target.value)}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Description
+          <input
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.description}
+            onChange={(event) => handleDraftChange('description', event.target.value)}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Compatible Wire Gauge
+          <input
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.compatibleWireGauge}
+            onChange={(event) => handleDraftChange('compatibleWireGauge', event.target.value)}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Crimp Tool Part Number
+          <input
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.crimpToolPartNumber}
+            onChange={(event) => handleDraftChange('crimpToolPartNumber', event.target.value)}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Stud Size
+          <input
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.studSize}
+            onChange={(event) => handleDraftChange('studSize', event.target.value)}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground md:col-span-2">
+          Notes
+          <textarea
+            className="mt-1 min-h-16 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            value={draft.notes}
+            onChange={(event) => handleDraftChange('notes', event.target.value)}
+          />
+        </label>
+        <div className="flex flex-wrap gap-2 md:col-span-2">
+          <Button type="button" size="sm" onClick={handleSave}>
+            {isEditing ? 'Update Ring Terminal' : 'Add Ring Terminal'}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={resetEditor}>
+            Clear
+          </Button>
+        </div>
+      </div>
+
+      {ringTerminalItems.length === 0 ? (
+        <div className="mt-3 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
+          No ring terminals yet. Add ring terminal entries to build this catalog section.
+        </div>
+      ) : (
+        <div className="mt-3 overflow-x-auto rounded-md border border-border">
+          <table className="w-full min-w-[920px] border-collapse text-xs">
+            <thead className="bg-muted/40">
+              <tr>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">ID</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Part Number</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Manufacturer</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Description</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Compatible Wire Gauge</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Crimp Tool Part Number</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Stud Size</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Notes</th>
+                <th className="border-b border-border px-2 py-1 text-left font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ringTerminalItems.map((item) => (
+                <tr key={item.id}>
+                  <td className="border-b border-border px-2 py-1">{item.id}</td>
+                  <td className="border-b border-border px-2 py-1">{item.partNumber}</td>
+                  <td className="border-b border-border px-2 py-1">{item.manufacturer}</td>
+                  <td className="border-b border-border px-2 py-1">{item.description}</td>
+                  <td className="border-b border-border px-2 py-1">{item.compatibleWireGauge}</td>
+                  <td className="border-b border-border px-2 py-1">{item.crimpToolPartNumber}</td>
+                  <td className="border-b border-border px-2 py-1">{item.studSize}</td>
+                  <td className="border-b border-border px-2 py-1">{item.notes}</td>
+                  <td className="border-b border-border px-2 py-1">
+                    <div className="flex gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => handleEdit(item)}>
+                        Edit
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => handleDelete(item.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
 }
 
 function ConnectorHousingSection() {
@@ -910,11 +1147,7 @@ export function MaterialCatalogView() {
     <div className="min-h-0 flex-1 overflow-y-auto p-3">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
         <ConnectorHousingSection />
-        <CatalogScaffoldSection
-          title="Standalone Terminals"
-          description="No standalone terminals yet. Add terminal entries to start your terminal catalog."
-          actionLabel="Add Terminal"
-        />
+        <RingTerminalSection />
         <CatalogScaffoldSection
           title="Wire Types"
           description="No wire types yet. Add wire type records for reusable wire specifications."
