@@ -79,3 +79,13 @@ export type ConnectorPlug = z.infer<typeof connectorPlugSchema>;
 export type RingTerminal = z.infer<typeof ringTerminalSchema>;
 export type WireType = z.infer<typeof wireTypeSchema>;
 export type AccessoryMaterial = z.infer<typeof accessoryMaterialSchema>;
+
+
+export const materialCatalogSchema = z.object({
+  connectorHousings: z.array(connectorHousingSchema),
+  ringTerminals: z.array(ringTerminalSchema),
+  wireTypes: z.array(wireTypeSchema),
+  accessoryMaterials: z.array(accessoryMaterialSchema)
+});
+
+export type MaterialCatalog = z.infer<typeof materialCatalogSchema>;
