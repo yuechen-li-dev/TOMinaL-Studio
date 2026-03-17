@@ -125,14 +125,16 @@ export function AppShell({
     [catalog.wireTypes]
   );
 
+  const collapsedConnectorIds = uiState.collapsedConnectorIds;
+
   const nodes = useMemo(
     () =>
       toFlowNodes(document, {
-        collapsedConnectorIds: uiState.collapsedConnectorIds,
+        collapsedConnectorIds,
         connectorCallbacks,
         housingOptions
       }),
-    [connectorCallbacks, document, housingOptions, uiState.collapsedConnectorIds]
+    [document, collapsedConnectorIds, connectorCallbacks, housingOptions]
   );
   const segments = useMemo(() => toFlowEdges(document), [document]);
 
