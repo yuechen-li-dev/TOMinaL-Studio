@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { SelectionState } from '@/app/App';
 import { CatalogIdSelect, type CatalogSelectOption } from '@/components/CatalogIdSelect';
 import { Button } from '@/components/ui/button';
@@ -92,7 +93,7 @@ export function RightInspector({
   const selectedSegment = selectedSegmentId ? getSegmentById(document, selectedSegmentId) : undefined;
   const selectedWire = selectedWireId ? getWireById(document, selectedWireId) : undefined;
   const selectedWireMetrics = selectedWire ? getWireMetrics(document, selectedWire.id) : undefined;
-  const allWireMetrics = getAllWireMetrics(document);
+  const allWireMetrics = useMemo(() => getAllWireMetrics(document), [document]);
   const wires = getAllWires(document);
 
   const fromPins = selectedWire ? getConnectorPins(document, selectedWire.from.connectorId) : [];
