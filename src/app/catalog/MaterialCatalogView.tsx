@@ -1,6 +1,29 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+
+type ConnectorTerminalItem = {
+  id: string;
+  partNumber: string;
+  description: string;
+  compatibleWireGauge: string;
+  crimpToolPartNumber: string;
+  notes: string;
+};
+
+type ConnectorSealItem = {
+  id: string;
+  partNumber: string;
+  description: string;
+  notes: string;
+};
+
+type ConnectorPlugItem = {
+  id: string;
+  partNumber: string;
+  description: string;
+  notes: string;
+};
 
 type ConnectorHousingItem = {
   id: string;
@@ -10,6 +33,9 @@ type ConnectorHousingItem = {
   family: string;
   cavityCount: number;
   notes: string;
+  terminals: ConnectorTerminalItem[];
+  seals: ConnectorSealItem[];
+  plugs: ConnectorPlugItem[];
 };
 
 type ConnectorHousingForm = {
@@ -19,6 +45,29 @@ type ConnectorHousingForm = {
   description: string;
   family: string;
   cavityCount: string;
+  notes: string;
+};
+
+type ConnectorTerminalForm = {
+  id: string;
+  partNumber: string;
+  description: string;
+  compatibleWireGauge: string;
+  crimpToolPartNumber: string;
+  notes: string;
+};
+
+type ConnectorSealForm = {
+  id: string;
+  partNumber: string;
+  description: string;
+  notes: string;
+};
+
+type ConnectorPlugForm = {
+  id: string;
+  partNumber: string;
+  description: string;
   notes: string;
 };
 
@@ -35,6 +84,29 @@ const emptyHousingForm: ConnectorHousingForm = {
   description: '',
   family: '',
   cavityCount: '',
+  notes: ''
+};
+
+const emptyTerminalForm: ConnectorTerminalForm = {
+  id: '',
+  partNumber: '',
+  description: '',
+  compatibleWireGauge: '',
+  crimpToolPartNumber: '',
+  notes: ''
+};
+
+const emptySealForm: ConnectorSealForm = {
+  id: '',
+  partNumber: '',
+  description: '',
+  notes: ''
+};
+
+const emptyPlugForm: ConnectorPlugForm = {
+  id: '',
+  partNumber: '',
+  description: '',
   notes: ''
 };
 
@@ -69,9 +141,23 @@ function mapHousingItemToForm(item: ConnectorHousingItem): ConnectorHousingForm 
 function ConnectorHousingSection() {
   const [housingItems, setHousingItems] = useState<ConnectorHousingItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [selectedHousingId, setSelectedHousingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ConnectorHousingForm>(emptyHousingForm);
 
+  const [editingTerminalId, setEditingTerminalId] = useState<string | null>(null);
+  const [terminalDraft, setTerminalDraft] = useState<ConnectorTerminalForm>(emptyTerminalForm);
+
+  const [editingSealId, setEditingSealId] = useState<string | null>(null);
+  const [sealDraft, setSealDraft] = useState<ConnectorSealForm>(emptySealForm);
+
+  const [editingPlugId, setEditingPlugId] = useState<string | null>(null);
+  const [plugDraft, setPlugDraft] = useState<ConnectorPlugForm>(emptyPlugForm);
+
   const isEditing = editingItemId !== null;
+  const selectedHousing = useMemo(
+    () => housingItems.find((item) => item.id === selectedHousingId) ?? null,
+    [housingItems, selectedHousingId]
+  );
 
   const primaryActionLabel = useMemo(() => {
     if (isEditing) {
@@ -84,9 +170,28 @@ function ConnectorHousingSection() {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
+  const resetNestedEditors = () => {
+    setEditingTerminalId(null);
+    setTerminalDraft(emptyTerminalForm);
+    setEditingSealId(null);
+    setSealDraft(emptySealForm);
+    setEditingPlugId(null);
+    setPlugDraft(emptyPlugForm);
+  };
+
   const resetEditor = () => {
     setEditingItemId(null);
     setDraft(emptyHousingForm);
+  };
+
+  const updateSelectedHousing = (updater: (item: ConnectorHousingItem) => ConnectorHousingItem) => {
+    if (selectedHousingId === null) {
+      return;
+    }
+
+    setHousingItems((current) =>
+      current.map((item) => (item.id === selectedHousingId ? updater(item) : item))
+    );
   };
 
   const handleSaveHousing = () => {
@@ -102,7 +207,10 @@ function ConnectorHousingSection() {
       description: draft.description.trim(),
       family: draft.family.trim(),
       cavityCount,
-      notes: draft.notes.trim()
+      notes: draft.notes.trim(),
+      terminals: [],
+      seals: [],
+      plugs: []
     };
 
     setHousingItems((current) => {
@@ -110,14 +218,25 @@ function ConnectorHousingSection() {
         return [...current, nextItem];
       }
 
-      return current.map((item) => (item.id === editingItemId ? nextItem : item));
+      return current.map((item) =>
+        item.id === editingItemId
+          ? {
+              ...nextItem,
+              terminals: item.terminals,
+              seals: item.seals,
+              plugs: item.plugs
+            }
+          : item
+      );
     });
 
+    setSelectedHousingId(nextItem.id);
     resetEditor();
   };
 
   const handleEditHousing = (item: ConnectorHousingItem) => {
     setEditingItemId(item.id);
+    setSelectedHousingId(item.id);
     setDraft(mapHousingItemToForm(item));
   };
 
@@ -127,13 +246,92 @@ function ConnectorHousingSection() {
     if (editingItemId === itemId) {
       resetEditor();
     }
+
+    if (selectedHousingId === itemId) {
+      setSelectedHousingId(null);
+      resetNestedEditors();
+    }
+  };
+
+  const handleSaveTerminal = () => {
+    if (!selectedHousing || !terminalDraft.id.trim() || !terminalDraft.partNumber.trim()) {
+      return;
+    }
+
+    const nextTerminal: ConnectorTerminalItem = {
+      id: terminalDraft.id.trim(),
+      partNumber: terminalDraft.partNumber.trim(),
+      description: terminalDraft.description.trim(),
+      compatibleWireGauge: terminalDraft.compatibleWireGauge.trim(),
+      crimpToolPartNumber: terminalDraft.crimpToolPartNumber.trim(),
+      notes: terminalDraft.notes.trim()
+    };
+
+    updateSelectedHousing((item) => ({
+      ...item,
+      terminals:
+        editingTerminalId === null
+          ? [...item.terminals, nextTerminal]
+          : item.terminals.map((terminal) => (terminal.id === editingTerminalId ? nextTerminal : terminal))
+    }));
+
+    setEditingTerminalId(null);
+    setTerminalDraft(emptyTerminalForm);
+  };
+
+  const handleSaveSeal = () => {
+    if (!selectedHousing || !sealDraft.id.trim() || !sealDraft.partNumber.trim()) {
+      return;
+    }
+
+    const nextSeal: ConnectorSealItem = {
+      id: sealDraft.id.trim(),
+      partNumber: sealDraft.partNumber.trim(),
+      description: sealDraft.description.trim(),
+      notes: sealDraft.notes.trim()
+    };
+
+    updateSelectedHousing((item) => ({
+      ...item,
+      seals: editingSealId === null ? [...item.seals, nextSeal] : item.seals.map((seal) => (seal.id === editingSealId ? nextSeal : seal))
+    }));
+
+    setEditingSealId(null);
+    setSealDraft(emptySealForm);
+  };
+
+  const handleSavePlug = () => {
+    if (!selectedHousing || !plugDraft.id.trim() || !plugDraft.partNumber.trim()) {
+      return;
+    }
+
+    const nextPlug: ConnectorPlugItem = {
+      id: plugDraft.id.trim(),
+      partNumber: plugDraft.partNumber.trim(),
+      description: plugDraft.description.trim(),
+      notes: plugDraft.notes.trim()
+    };
+
+    updateSelectedHousing((item) => ({
+      ...item,
+      plugs: editingPlugId === null ? [...item.plugs, nextPlug] : item.plugs.map((plug) => (plug.id === editingPlugId ? nextPlug : plug))
+    }));
+
+    setEditingPlugId(null);
+    setPlugDraft(emptyPlugForm);
   };
 
   return (
     <section className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Connector Housing</h2>
-        <Button type="button" size="sm" onClick={() => resetEditor()}>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => {
+            resetEditor();
+          }}
+        >
           Add Housing
         </Button>
       </div>
@@ -215,7 +413,7 @@ function ConnectorHousingSection() {
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-md border border-border">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
+          <table className="w-full min-w-[820px] border-collapse text-sm">
             <thead className="bg-muted/40">
               <tr>
                 <th className="border-b border-border px-2 py-2 text-left font-medium">ID</th>
@@ -230,25 +428,474 @@ function ConnectorHousingSection() {
             </thead>
             <tbody>
               {housingItems.map((item) => (
-                <tr key={item.id} className="align-top">
-                  <td className="border-b border-border px-2 py-2">{item.id}</td>
-                  <td className="border-b border-border px-2 py-2">{item.partNumber}</td>
-                  <td className="border-b border-border px-2 py-2">{item.manufacturer}</td>
-                  <td className="border-b border-border px-2 py-2">{item.description}</td>
-                  <td className="border-b border-border px-2 py-2">{item.family}</td>
-                  <td className="border-b border-border px-2 py-2">{item.cavityCount}</td>
-                  <td className="border-b border-border px-2 py-2">{item.notes}</td>
-                  <td className="border-b border-border px-2 py-2">
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleEditHousing(item)}>
-                        Edit
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleDeleteHousing(item.id)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
+                <Fragment key={item.id}>
+                  <tr key={item.id} className="align-top">
+                    <td className="border-b border-border px-2 py-2">{item.id}</td>
+                    <td className="border-b border-border px-2 py-2">{item.partNumber}</td>
+                    <td className="border-b border-border px-2 py-2">{item.manufacturer}</td>
+                    <td className="border-b border-border px-2 py-2">{item.description}</td>
+                    <td className="border-b border-border px-2 py-2">{item.family}</td>
+                    <td className="border-b border-border px-2 py-2">{item.cavityCount}</td>
+                    <td className="border-b border-border px-2 py-2">{item.notes}</td>
+                    <td className="border-b border-border px-2 py-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleEditHousing(item)}>
+                          Edit
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleDeleteHousing(item.id)}>
+                          Delete
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (selectedHousingId === item.id) {
+                              setSelectedHousingId(null);
+                              resetNestedEditors();
+                              return;
+                            }
+
+                            setSelectedHousingId(item.id);
+                            resetNestedEditors();
+                          }}
+                        >
+                          {selectedHousingId === item.id ? 'Hide Details' : 'Manage Children'}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                  {selectedHousingId === item.id ? (
+                    <tr>
+                      <td className="bg-muted/10 px-3 py-3" colSpan={8}>
+                        <div className="space-y-3">
+                          <div className="rounded-md border border-border bg-background p-3">
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                              <h3 className="text-sm font-semibold">Terminals</h3>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingTerminalId(null);
+                                  setTerminalDraft(emptyTerminalForm);
+                                }}
+                              >
+                                Add Terminal
+                              </Button>
+                            </div>
+                            <div className="grid gap-2 md:grid-cols-3">
+                              <label className="text-xs font-medium text-muted-foreground">
+                                ID
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={terminalDraft.id}
+                                  onChange={(event) => setTerminalDraft((current) => ({ ...current, id: event.target.value }))}
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground">
+                                Part Number
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={terminalDraft.partNumber}
+                                  onChange={(event) =>
+                                    setTerminalDraft((current) => ({ ...current, partNumber: event.target.value }))
+                                  }
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground">
+                                Description
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={terminalDraft.description}
+                                  onChange={(event) =>
+                                    setTerminalDraft((current) => ({ ...current, description: event.target.value }))
+                                  }
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground">
+                                Compatible Wire Gauge
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={terminalDraft.compatibleWireGauge}
+                                  onChange={(event) =>
+                                    setTerminalDraft((current) => ({ ...current, compatibleWireGauge: event.target.value }))
+                                  }
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground">
+                                Crimp Tool Part Number
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={terminalDraft.crimpToolPartNumber}
+                                  onChange={(event) =>
+                                    setTerminalDraft((current) => ({ ...current, crimpToolPartNumber: event.target.value }))
+                                  }
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground md:col-span-3">
+                                Notes
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={terminalDraft.notes}
+                                  onChange={(event) =>
+                                    setTerminalDraft((current) => ({ ...current, notes: event.target.value }))
+                                  }
+                                />
+                              </label>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Button type="button" size="sm" onClick={handleSaveTerminal}>
+                                {editingTerminalId === null ? 'Add Terminal' : 'Update Terminal'}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingTerminalId(null);
+                                  setTerminalDraft(emptyTerminalForm);
+                                }}
+                              >
+                                Clear
+                              </Button>
+                            </div>
+                            {item.terminals.length === 0 ? (
+                              <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-3 py-3 text-xs text-muted-foreground">
+                                No terminals for this housing yet.
+                              </div>
+                            ) : (
+                              <div className="mt-2 overflow-x-auto rounded-md border border-border">
+                                <table className="w-full min-w-[760px] border-collapse text-xs">
+                                  <thead className="bg-muted/40">
+                                    <tr>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">ID</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Part Number</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Description</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Compatible Wire Gauge</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Crimp Tool Part Number</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Notes</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {item.terminals.map((terminal) => (
+                                      <tr key={terminal.id}>
+                                        <td className="border-b border-border px-2 py-1">{terminal.id}</td>
+                                        <td className="border-b border-border px-2 py-1">{terminal.partNumber}</td>
+                                        <td className="border-b border-border px-2 py-1">{terminal.description}</td>
+                                        <td className="border-b border-border px-2 py-1">{terminal.compatibleWireGauge}</td>
+                                        <td className="border-b border-border px-2 py-1">{terminal.crimpToolPartNumber}</td>
+                                        <td className="border-b border-border px-2 py-1">{terminal.notes}</td>
+                                        <td className="border-b border-border px-2 py-1">
+                                          <div className="flex gap-2">
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                setEditingTerminalId(terminal.id);
+                                                setTerminalDraft({ ...terminal });
+                                              }}
+                                            >
+                                              Edit
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                updateSelectedHousing((housing) => ({
+                                                  ...housing,
+                                                  terminals: housing.terminals.filter(
+                                                    (currentTerminal) => currentTerminal.id !== terminal.id
+                                                  )
+                                                }));
+
+                                                if (editingTerminalId === terminal.id) {
+                                                  setEditingTerminalId(null);
+                                                  setTerminalDraft(emptyTerminalForm);
+                                                }
+                                              }}
+                                            >
+                                              Delete
+                                            </Button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="rounded-md border border-border bg-background p-3">
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                              <h3 className="text-sm font-semibold">Seals</h3>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingSealId(null);
+                                  setSealDraft(emptySealForm);
+                                }}
+                              >
+                                Add Seal
+                              </Button>
+                            </div>
+                            <div className="grid gap-2 md:grid-cols-2">
+                              <label className="text-xs font-medium text-muted-foreground">
+                                ID
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={sealDraft.id}
+                                  onChange={(event) => setSealDraft((current) => ({ ...current, id: event.target.value }))}
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground">
+                                Part Number
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={sealDraft.partNumber}
+                                  onChange={(event) => setSealDraft((current) => ({ ...current, partNumber: event.target.value }))}
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground md:col-span-2">
+                                Description
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={sealDraft.description}
+                                  onChange={(event) =>
+                                    setSealDraft((current) => ({ ...current, description: event.target.value }))
+                                  }
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground md:col-span-2">
+                                Notes
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={sealDraft.notes}
+                                  onChange={(event) => setSealDraft((current) => ({ ...current, notes: event.target.value }))}
+                                />
+                              </label>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Button type="button" size="sm" onClick={handleSaveSeal}>
+                                {editingSealId === null ? 'Add Seal' : 'Update Seal'}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingSealId(null);
+                                  setSealDraft(emptySealForm);
+                                }}
+                              >
+                                Clear
+                              </Button>
+                            </div>
+                            {item.seals.length === 0 ? (
+                              <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-3 py-3 text-xs text-muted-foreground">
+                                No seals for this housing yet.
+                              </div>
+                            ) : (
+                              <div className="mt-2 overflow-x-auto rounded-md border border-border">
+                                <table className="w-full min-w-[620px] border-collapse text-xs">
+                                  <thead className="bg-muted/40">
+                                    <tr>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">ID</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Part Number</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Description</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Notes</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {item.seals.map((seal) => (
+                                      <tr key={seal.id}>
+                                        <td className="border-b border-border px-2 py-1">{seal.id}</td>
+                                        <td className="border-b border-border px-2 py-1">{seal.partNumber}</td>
+                                        <td className="border-b border-border px-2 py-1">{seal.description}</td>
+                                        <td className="border-b border-border px-2 py-1">{seal.notes}</td>
+                                        <td className="border-b border-border px-2 py-1">
+                                          <div className="flex gap-2">
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                setEditingSealId(seal.id);
+                                                setSealDraft({ ...seal });
+                                              }}
+                                            >
+                                              Edit
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                updateSelectedHousing((housing) => ({
+                                                  ...housing,
+                                                  seals: housing.seals.filter((currentSeal) => currentSeal.id !== seal.id)
+                                                }));
+
+                                                if (editingSealId === seal.id) {
+                                                  setEditingSealId(null);
+                                                  setSealDraft(emptySealForm);
+                                                }
+                                              }}
+                                            >
+                                              Delete
+                                            </Button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="rounded-md border border-border bg-background p-3">
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                              <h3 className="text-sm font-semibold">Plugs</h3>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingPlugId(null);
+                                  setPlugDraft(emptyPlugForm);
+                                }}
+                              >
+                                Add Plug
+                              </Button>
+                            </div>
+                            <div className="grid gap-2 md:grid-cols-2">
+                              <label className="text-xs font-medium text-muted-foreground">
+                                ID
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={plugDraft.id}
+                                  onChange={(event) => setPlugDraft((current) => ({ ...current, id: event.target.value }))}
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground">
+                                Part Number
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={plugDraft.partNumber}
+                                  onChange={(event) => setPlugDraft((current) => ({ ...current, partNumber: event.target.value }))}
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground md:col-span-2">
+                                Description
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={plugDraft.description}
+                                  onChange={(event) =>
+                                    setPlugDraft((current) => ({ ...current, description: event.target.value }))
+                                  }
+                                />
+                              </label>
+                              <label className="text-xs font-medium text-muted-foreground md:col-span-2">
+                                Notes
+                                <input
+                                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+                                  value={plugDraft.notes}
+                                  onChange={(event) => setPlugDraft((current) => ({ ...current, notes: event.target.value }))}
+                                />
+                              </label>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Button type="button" size="sm" onClick={handleSavePlug}>
+                                {editingPlugId === null ? 'Add Plug' : 'Update Plug'}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingPlugId(null);
+                                  setPlugDraft(emptyPlugForm);
+                                }}
+                              >
+                                Clear
+                              </Button>
+                            </div>
+                            {item.plugs.length === 0 ? (
+                              <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-3 py-3 text-xs text-muted-foreground">
+                                No plugs for this housing yet.
+                              </div>
+                            ) : (
+                              <div className="mt-2 overflow-x-auto rounded-md border border-border">
+                                <table className="w-full min-w-[620px] border-collapse text-xs">
+                                  <thead className="bg-muted/40">
+                                    <tr>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">ID</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Part Number</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Description</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Notes</th>
+                                      <th className="border-b border-border px-2 py-1 text-left font-medium">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {item.plugs.map((plug) => (
+                                      <tr key={plug.id}>
+                                        <td className="border-b border-border px-2 py-1">{plug.id}</td>
+                                        <td className="border-b border-border px-2 py-1">{plug.partNumber}</td>
+                                        <td className="border-b border-border px-2 py-1">{plug.description}</td>
+                                        <td className="border-b border-border px-2 py-1">{plug.notes}</td>
+                                        <td className="border-b border-border px-2 py-1">
+                                          <div className="flex gap-2">
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                setEditingPlugId(plug.id);
+                                                setPlugDraft({ ...plug });
+                                              }}
+                                            >
+                                              Edit
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                updateSelectedHousing((housing) => ({
+                                                  ...housing,
+                                                  plugs: housing.plugs.filter((currentPlug) => currentPlug.id !== plug.id)
+                                                }));
+
+                                                if (editingPlugId === plug.id) {
+                                                  setEditingPlugId(null);
+                                                  setPlugDraft(emptyPlugForm);
+                                                }
+                                              }}
+                                            >
+                                              Delete
+                                            </Button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>
