@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 
+import { emptyMaterialCatalogData, type MaterialCatalogData } from '@/catalog/catalogData';
 import { MaterialCatalogView } from '@/app/catalog/MaterialCatalogView';
 import type { SelectionState, UiState } from '@/app/App';
 import { LeftSidebar } from '@/app/layout/LeftSidebar';
@@ -23,6 +24,7 @@ import type { ConnectorPin, HarnessDocument, XY } from '@/core/harnessModel';
 import { exportHarnessToToml, importHarnessFromToml } from '@/core/tomlCodec';
 import { generateWiresFromSignals, type WireGenerationReport } from '@/core/wireGeneration';
 import { toFlowEdges, toFlowNodes } from '@/core/graphAdapter';
+import { validateGraphCompatibility, summarizeGraphValidation } from '@/core/graphValidation';
 import { countNodes, countSegments, countWires } from '@/core/harnessSelectors';
 import { FlowCanvas } from '@/flow/FlowCanvas';
 import type { TominalNodeKind } from '@/flow/flowTypes';
@@ -48,6 +50,7 @@ export function AppShell({
 }: AppShellProps) {
   const [wireGenerationReport, setWireGenerationReport] = useState<WireGenerationReport | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('graph');
+  const [catalog, setCatalog] = useState<MaterialCatalogData>(emptyMaterialCatalogData);
 
   const handleExportDocument = () => {
     const toml = exportHarnessToToml(document);
@@ -119,6 +122,14 @@ export function AppShell({
     [document]
   );
 
+
+  const validationResults = useMemo(() => validateGraphCompatibility(document, catalog), [catalog, document]);
+  const validationSummary = useMemo(() => summarizeGraphValidation(validationResults), [validationResults]);
+  const validationHighlights = useMemo(
+    () => validationResults.filter((result) => result.status !== 'valid').slice(0, 4),
+    [validationResults]
+  );
+
   const handleAddNode = (kind: TominalNodeKind) => {
     const nextIndex = countNodes(document) + 1;
     const position = getNewNodePosition(nextIndex);
@@ -171,6 +182,8 @@ export function AppShell({
           canCreateSegment={canCreateSegment}
           onGenerateWiresFromSignals={handleGenerateWiresFromSignals}
           wireGenerationReport={wireGenerationReport}
+          validationSummary={validationSummary}
+          validationHighlights={validationHighlights}
         />
         <FlowCanvas
           nodes={nodes}
@@ -192,7 +205,7 @@ export function AppShell({
         />
       </div>
       <div className={activeTab === 'material-catalog' ? 'min-h-0 flex-1' : 'hidden min-h-0 flex-1'}>
-        <MaterialCatalogView />
+        <MaterialCatalogView onCatalogChange={setCatalog} />
       </div>
     </div>
   );

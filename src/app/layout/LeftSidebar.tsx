@@ -1,6 +1,7 @@
-import { GitBranchPlus, PlusCircle, Split, WandSparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CircleHelp, GitBranchPlus, PlusCircle, Split, WandSparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import type { GraphValidationResult } from '@/core/graphValidation';
 import type { WireGenerationReport } from '@/core/wireGeneration';
 import type { TominalNodeKind } from '@/flow/flowTypes';
 
@@ -15,6 +16,8 @@ type LeftSidebarProps = {
   canCreateSegment: boolean;
   onGenerateWiresFromSignals: () => void;
   wireGenerationReport: WireGenerationReport | null;
+  validationSummary: { valid: number; unbound: number; invalid: number };
+  validationHighlights: GraphValidationResult[];
 };
 
 export function LeftSidebar({
@@ -23,7 +26,9 @@ export function LeftSidebar({
   onCreateSegment,
   canCreateSegment,
   onGenerateWiresFromSignals,
-  wireGenerationReport
+  wireGenerationReport,
+  validationSummary,
+  validationHighlights
 }: LeftSidebarProps) {
   return (
     <aside className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
@@ -56,6 +61,29 @@ export function LeftSidebar({
         <p className="text-sm text-muted-foreground">Nodes: {summary.nodeCount}</p>
         <p className="text-sm text-muted-foreground">Segments: {summary.edgeCount}</p>
         <p className="text-sm text-muted-foreground">Wires: {summary.wireCount}</p>
+      </div>
+
+
+      <div className="mt-4 space-y-2 rounded-lg border border-border/70 bg-muted/30 p-3">
+        <h3 className="text-sm font-medium">Validation Summary</h3>
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Valid: {validationSummary.valid}
+        </p>
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CircleHelp className="h-3.5 w-3.5 text-amber-500" /> Unbound: {validationSummary.unbound}
+        </p>
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <AlertCircle className="h-3.5 w-3.5 text-destructive" /> Invalid: {validationSummary.invalid}
+        </p>
+        {validationHighlights.length > 0 ? (
+          <ul className="space-y-1 pt-1 text-xs text-muted-foreground">
+            {validationHighlights.map((item) => (
+              <li key={`${item.rule}:${item.entityId}`} className="line-clamp-2">
+                {item.message}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       {wireGenerationReport ? (

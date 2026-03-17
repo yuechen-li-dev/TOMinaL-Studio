@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 
 import {
   validateAccessoryMaterial,
@@ -9,6 +9,7 @@ import {
   validateRingTerminal,
   validateWireType
 } from '@/catalog/validation';
+import type { MaterialCatalogData } from '@/catalog/catalogData';
 import { Button } from '@/components/ui/button';
 
 type ConnectorTerminalItem = {
@@ -109,7 +110,7 @@ type WireTypeItem = {
   description: string;
   gauge: string;
   insulationType: string;
-  notes?: string;
+  notes: string;
 };
 
 type WireTypeForm = {
@@ -128,7 +129,7 @@ type AccessoryMaterialItem = {
   manufacturer: string;
   description: string;
   category: string;
-  notes?: string;
+  notes: string;
 };
 
 type AccessoryMaterialForm = {
@@ -293,7 +294,7 @@ function AccessoryMaterialsSection() {
     setValidationError(null);
     const nextItem: AccessoryMaterialItem = {
       ...validationResult.data,
-      notes: validationResult.data.notes && validationResult.data.notes.length > 0 ? validationResult.data.notes : undefined
+      notes: validationResult.data.notes ?? ''
     };
 
     setAccessoryItems((current) => {
@@ -437,8 +438,13 @@ function AccessoryMaterialsSection() {
   );
 }
 
-function WireTypesSection() {
-  const [wireTypeItems, setWireTypeItems] = useState<WireTypeItem[]>([]);
+function WireTypesSection({
+  wireTypeItems,
+  onWireTypeItemsChange
+}: {
+  wireTypeItems: WireTypeItem[];
+  onWireTypeItemsChange: Dispatch<SetStateAction<WireTypeItem[]>>;
+}) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<WireTypeForm>(emptyWireTypeForm);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -476,10 +482,10 @@ function WireTypesSection() {
     setValidationError(null);
     const nextItem: WireTypeItem = {
       ...validationResult.data,
-      notes: validationResult.data.notes && validationResult.data.notes.length > 0 ? validationResult.data.notes : undefined
+      notes: validationResult.data.notes ?? ''
     };
 
-    setWireTypeItems((current) => {
+    onWireTypeItemsChange((current) => {
       if (editingItemId === null) {
         return [...current, nextItem];
       }
@@ -497,7 +503,7 @@ function WireTypesSection() {
   };
 
   const handleDelete = (itemId: string) => {
-    setWireTypeItems((current) => current.filter((item) => item.id !== itemId));
+    onWireTypeItemsChange((current) => current.filter((item) => item.id !== itemId));
 
     if (editingItemId === itemId) {
       resetEditor();
@@ -832,8 +838,13 @@ function RingTerminalSection() {
   );
 }
 
-function ConnectorHousingSection() {
-  const [housingItems, setHousingItems] = useState<ConnectorHousingItem[]>([]);
+function ConnectorHousingSection({
+  housingItems,
+  onHousingItemsChange
+}: {
+  housingItems: ConnectorHousingItem[];
+  onHousingItemsChange: Dispatch<SetStateAction<ConnectorHousingItem[]>>;
+}) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedHousingId, setSelectedHousingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ConnectorHousingForm>(emptyHousingForm);
@@ -891,7 +902,7 @@ function ConnectorHousingSection() {
       return;
     }
 
-    setHousingItems((current) =>
+    onHousingItemsChange((current) =>
       current.map((item) => (item.id === selectedHousingId ? updater(item) : item))
     );
   };
@@ -926,7 +937,7 @@ function ConnectorHousingSection() {
       plugs: []
     };
 
-    setHousingItems((current) => {
+    onHousingItemsChange((current) => {
       if (editingItemId === null) {
         return [...current, nextItem];
       }
@@ -955,7 +966,7 @@ function ConnectorHousingSection() {
   };
 
   const handleDeleteHousing = (itemId: string) => {
-    setHousingItems((current) => current.filter((item) => item.id !== itemId));
+    onHousingItemsChange((current) => current.filter((item) => item.id !== itemId));
 
     if (editingItemId === itemId) {
       resetEditor();
@@ -1347,7 +1358,7 @@ function ConnectorHousingSection() {
                                               size="sm"
                                               onClick={() => {
                                                 setEditingTerminalId(terminal.id);
-                                                setTerminalDraft({ ...terminal });
+                                                setTerminalDraft({ ...terminal, notes: terminal.notes ?? '' });
                                               }}
                                             >
                                               Edit
@@ -1481,7 +1492,7 @@ function ConnectorHousingSection() {
                                               size="sm"
                                               onClick={() => {
                                                 setEditingSealId(seal.id);
-                                                setSealDraft({ ...seal });
+                                                setSealDraft({ ...seal, notes: seal.notes ?? '' });
                                               }}
                                             >
                                               Edit
@@ -1613,7 +1624,7 @@ function ConnectorHousingSection() {
                                               size="sm"
                                               onClick={() => {
                                                 setEditingPlugId(plug.id);
-                                                setPlugDraft({ ...plug });
+                                                setPlugDraft({ ...plug, notes: plug.notes ?? '' });
                                               }}
                                             >
                                               Edit
@@ -1659,13 +1670,23 @@ function ConnectorHousingSection() {
   );
 }
 
-export function MaterialCatalogView() {
+export function MaterialCatalogView({ onCatalogChange }: { onCatalogChange?: (catalog: MaterialCatalogData) => void }) {
+  const [connectorHousings, setConnectorHousings] = useState<ConnectorHousingItem[]>([]);
+  const [wireTypes, setWireTypes] = useState<WireTypeItem[]>([]);
+
+  useEffect(() => {
+    onCatalogChange?.({
+      connectorHousings,
+      wireTypes
+    });
+  }, [connectorHousings, onCatalogChange, wireTypes]);
+
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-3">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
-        <ConnectorHousingSection />
+        <ConnectorHousingSection housingItems={connectorHousings} onHousingItemsChange={setConnectorHousings} />
         <RingTerminalSection />
-        <WireTypesSection />
+        <WireTypesSection wireTypeItems={wireTypes} onWireTypeItemsChange={setWireTypes} />
         <AccessoryMaterialsSection />
       </div>
     </div>
