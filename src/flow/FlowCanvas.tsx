@@ -27,11 +27,25 @@ type FlowCanvasProps = {
 };
 
 export function FlowCanvas({ nodes, segments, onMoveNode, onSelectionChange }: FlowCanvasProps) {
+  console.count('FlowCanvas render');
+
   const [uiNodes, setUiNodes] = useState(nodes);
   const [uiEdges, setUiEdges] = useState(segments);
 
-  useEffect(() => setUiNodes(nodes), [nodes]);
-  useEffect(() => setUiEdges(segments), [segments]);
+  useEffect(() => {
+    setUiNodes((prev) => {
+      console.count('setUiNodes');
+      if (prev === nodes) return prev;
+      return nodes;
+    });
+  }, [nodes]);
+
+  useEffect(() => {
+    setUiEdges((prev) => {
+      if (prev === segments) return prev;
+      return segments;
+    });
+  }, [segments]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange<Node<TominalNodeData>>[]) => setUiNodes((current) => applyNodeChanges(changes, current)),
