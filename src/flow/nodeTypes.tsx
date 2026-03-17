@@ -1,5 +1,6 @@
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
+import { CatalogIdSelect } from '@/components/CatalogIdSelect';
 import type { TominalNodeData } from '@/flow/flowTypes';
 
 type TominalRFNode = Node<TominalNodeData>;
@@ -56,11 +57,13 @@ function ConnectorNode({ data }: NodeProps<TominalRFNode>) {
 
           <label className="grid grid-cols-[60px_1fr] items-center gap-1.5">
             <span className="font-medium">Housing</span>
-            <input
+            <CatalogIdSelect
               className="nodrag h-6 rounded border border-blue-200 bg-white px-1.5 py-0.5 text-[10px]"
-              onChange={(event) => data.onHousingIdChange?.(connectorId, event.target.value)}
-              onPointerDown={(event) => event.stopPropagation()}
-              value={data.housingId ?? ''}
+              currentValue={data.housingId}
+              idLabel="housings"
+              onChange={(nextId) => data.onHousingIdChange?.(connectorId, nextId)}
+              options={data.housingOptions ?? []}
+              placeholder="Unbound"
             />
           </label>
 

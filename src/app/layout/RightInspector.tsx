@@ -1,6 +1,7 @@
 import type { SelectionState } from '@/app/App';
+import { CatalogIdSelect, type CatalogSelectOption } from '@/components/CatalogIdSelect';
 import { Button } from '@/components/ui/button';
-import type { HarnessDocument, Wire } from '@/core/harnessModel';
+import type { Connector, HarnessDocument, Wire } from '@/core/harnessModel';
 import {
   formatPinRef,
   getAllWireMetrics,
@@ -19,6 +20,9 @@ type RightInspectorProps = {
   onSegmentNominalLengthChange: (segmentId: string, nominalLengthMm: number | undefined) => void;
   onWireDelete: (wireId: string) => void;
   onWireChange: (wireId: string, patch: Partial<Wire>) => void;
+  onConnectorChange: (connectorId: string, patch: Partial<Connector>) => void;
+  housingOptions: CatalogSelectOption[];
+  wireTypeOptions: CatalogSelectOption[];
 };
 
 function parseRouteInput(raw: string): string[] {
@@ -75,7 +79,10 @@ export function RightInspector({
   selection,
   onSegmentNominalLengthChange,
   onWireDelete,
-  onWireChange
+  onWireChange,
+  onConnectorChange,
+  housingOptions,
+  wireTypeOptions
 }: RightInspectorProps) {
   const selectedNodeId = selection.selectedNodeIds[0];
   const selectedSegmentId = selection.selectedSegmentIds[0];
@@ -225,11 +232,14 @@ export function RightInspector({
                   value={selectedWire.material ?? ''}
                 />
 
-                <label className="text-muted-foreground">Wire Type ID</label>
-                <input
+                <label className="text-muted-foreground">Wire Type</label>
+                <CatalogIdSelect
                   className="rounded border border-border bg-background px-2 py-1"
-                  onChange={(event) => onWireChange(selectedWire.id, { wireTypeId: event.target.value || undefined })}
-                  value={selectedWire.wireTypeId ?? ''}
+                  currentValue={selectedWire.wireTypeId}
+                  idLabel="wire types"
+                  onChange={(nextId) => onWireChange(selectedWire.id, { wireTypeId: nextId })}
+                  options={wireTypeOptions}
+                  placeholder="Unbound"
                 />
 
                 <label className="text-muted-foreground">Terminal P/N</label>
@@ -272,8 +282,17 @@ export function RightInspector({
               <>
                 <dt className="text-muted-foreground">Part number</dt>
                 <dd className="font-medium">{document.connectors[selectedNodeId]?.partNumber ?? '—'}</dd>
-                <dt className="text-muted-foreground">Housing ID</dt>
-                <dd className="font-medium">{document.connectors[selectedNodeId]?.housingId ?? '—'}</dd>
+                <dt className="text-muted-foreground">Housing</dt>
+                <dd className="font-medium">
+                  <CatalogIdSelect
+                    className="w-full rounded border border-border bg-background px-2 py-1"
+                    currentValue={document.connectors[selectedNodeId]?.housingId}
+                    idLabel="housings"
+                    onChange={(nextId) => onConnectorChange(selectedNodeId, { housingId: nextId })}
+                    options={housingOptions}
+                    placeholder="Unbound"
+                  />
+                </dd>
                 <dt className="text-muted-foreground">Pin count</dt>
                 <dd className="font-medium">{Object.keys(document.connectors[selectedNodeId]?.pins ?? {}).length}</dd>
               </>

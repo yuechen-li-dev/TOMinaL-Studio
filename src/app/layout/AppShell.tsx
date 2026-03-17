@@ -5,6 +5,7 @@ import { MaterialCatalogView } from '@/app/catalog/MaterialCatalogView';
 import type { SelectionState, UiState } from '@/app/App';
 import { LeftSidebar } from '@/app/layout/LeftSidebar';
 import { RightInspector } from '@/app/layout/RightInspector';
+import type { CatalogSelectOption } from '@/components/CatalogIdSelect';
 import { TopBar } from '@/app/layout/TopBar';
 import { WorkspaceTabs, type WorkspaceTab } from '@/app/layout/WorkspaceTabs';
 import {
@@ -90,7 +91,7 @@ export function AppShell({
       onPartNumberChange: (connectorId: string, partNumber: string) => {
         onDocumentChange((current) => updateConnector(current, connectorId, { partNumber: partNumber || undefined }));
       },
-      onHousingIdChange: (connectorId: string, housingId: string) => {
+      onHousingIdChange: (connectorId: string, housingId: string | undefined) => {
         onDocumentChange((current) => updateConnector(current, connectorId, { housingId: housingId || undefined }));
       },
       onPinCountChange: (connectorId: string, pinCount: number) => {
@@ -103,13 +104,35 @@ export function AppShell({
     [onDocumentChange, onUiStateChange]
   );
 
+
+  const housingOptions = useMemo<CatalogSelectOption[]>(
+    () =>
+      catalog.connectorHousings.map((housing) => ({
+        id: housing.id,
+        label: housing.partNumber,
+        secondary: housing.manufacturer || housing.description
+      })),
+    [catalog.connectorHousings]
+  );
+
+  const wireTypeOptions = useMemo<CatalogSelectOption[]>(
+    () =>
+      catalog.wireTypes.map((wireType) => ({
+        id: wireType.id,
+        label: wireType.partNumber,
+        secondary: wireType.gauge || wireType.insulationType
+      })),
+    [catalog.wireTypes]
+  );
+
   const nodes = useMemo(
     () =>
       toFlowNodes(document, {
         collapsedConnectorIds: uiState.collapsedConnectorIds,
-        connectorCallbacks
+        connectorCallbacks,
+        housingOptions
       }),
-    [connectorCallbacks, document, uiState.collapsedConnectorIds]
+    [connectorCallbacks, document, housingOptions, uiState.collapsedConnectorIds]
   );
   const segments = useMemo(() => toFlowEdges(document), [document]);
 
@@ -202,6 +225,9 @@ export function AppShell({
             onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [] });
           }}
           onWireChange={(wireId, patch) => onDocumentChange((current) => updateWire(current, wireId, patch))}
+          onConnectorChange={(connectorId, patch) => onDocumentChange((current) => updateConnector(current, connectorId, patch))}
+          housingOptions={housingOptions}
+          wireTypeOptions={wireTypeOptions}
         />
       </div>
       <div className={activeTab === 'material-catalog' ? 'min-h-0 flex-1' : 'hidden min-h-0 flex-1'}>
