@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 
 import {
   validateAccessoryMaterial,
@@ -10,6 +10,7 @@ import {
   validateWireType
 } from '@/catalog/validation';
 import type { MaterialCatalogData } from '@/catalog/catalogData';
+import { exportCatalogToToml, importCatalogAdditive } from '@/catalog/catalogManifestCodec';
 import { Button } from '@/components/ui/button';
 
 type ConnectorTerminalItem = {
@@ -256,8 +257,13 @@ function formatValidationErrors(errors: string[]): string {
   return errors.join(' · ');
 }
 
-function AccessoryMaterialsSection() {
-  const [accessoryItems, setAccessoryItems] = useState<AccessoryMaterialItem[]>([]);
+function AccessoryMaterialsSection({
+  accessoryItems,
+  onAccessoryItemsChange
+}: {
+  accessoryItems: AccessoryMaterialItem[];
+  onAccessoryItemsChange: Dispatch<SetStateAction<AccessoryMaterialItem[]>>;
+}) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<AccessoryMaterialForm>(emptyAccessoryMaterialForm);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -297,7 +303,7 @@ function AccessoryMaterialsSection() {
       notes: validationResult.data.notes ?? ''
     };
 
-    setAccessoryItems((current) => {
+    onAccessoryItemsChange((current) => {
       if (editingItemId === null) {
         return [...current, nextItem];
       }
@@ -315,7 +321,7 @@ function AccessoryMaterialsSection() {
   };
 
   const handleDelete = (itemId: string) => {
-    setAccessoryItems((current) => current.filter((item) => item.id !== itemId));
+    onAccessoryItemsChange((current) => current.filter((item) => item.id !== itemId));
 
     if (editingItemId === itemId) {
       resetEditor();
@@ -636,8 +642,13 @@ function WireTypesSection({
   );
 }
 
-function RingTerminalSection() {
-  const [ringTerminalItems, setRingTerminalItems] = useState<RingTerminalItem[]>([]);
+function RingTerminalSection({
+  ringTerminalItems,
+  onRingTerminalItemsChange
+}: {
+  ringTerminalItems: RingTerminalItem[];
+  onRingTerminalItemsChange: Dispatch<SetStateAction<RingTerminalItem[]>>;
+}) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<RingTerminalForm>(emptyRingTerminalForm);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -677,7 +688,7 @@ function RingTerminalSection() {
       notes: validationResult.data.notes ?? ''
     };
 
-    setRingTerminalItems((current) => {
+    onRingTerminalItemsChange((current) => {
       if (editingItemId === null) {
         return [...current, nextItem];
       }
@@ -695,7 +706,7 @@ function RingTerminalSection() {
   };
 
   const handleDelete = (itemId: string) => {
-    setRingTerminalItems((current) => current.filter((item) => item.id !== itemId));
+    onRingTerminalItemsChange((current) => current.filter((item) => item.id !== itemId));
 
     if (editingItemId === itemId) {
       resetEditor();
@@ -1672,22 +1683,102 @@ function ConnectorHousingSection({
 
 export function MaterialCatalogView({ onCatalogChange }: { onCatalogChange?: (catalog: MaterialCatalogData) => void }) {
   const [connectorHousings, setConnectorHousings] = useState<ConnectorHousingItem[]>([]);
+  const [ringTerminals, setRingTerminals] = useState<RingTerminalItem[]>([]);
   const [wireTypes, setWireTypes] = useState<WireTypeItem[]>([]);
+  const [accessoryMaterials, setAccessoryMaterials] = useState<AccessoryMaterialItem[]>([]);
+  const [manifestMessage, setManifestMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     onCatalogChange?.({
       connectorHousings,
-      wireTypes
+      ringTerminals,
+      wireTypes,
+      accessoryMaterials
     });
-  }, [connectorHousings, onCatalogChange, wireTypes]);
+  }, [accessoryMaterials, connectorHousings, onCatalogChange, ringTerminals, wireTypes]);
+
+  const handleExportManifest = () => {
+    const toml = exportCatalogToToml({ connectorHousings, ringTerminals, wireTypes, accessoryMaterials });
+    const blob = new Blob([toml], { type: 'text/toml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'material-catalog.toml';
+    link.click();
+    URL.revokeObjectURL(url);
+    setManifestMessage('Catalog manifest exported.');
+  };
+
+  const handleImportManifestClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportManifestChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const existingCatalog: MaterialCatalogData = {
+        connectorHousings,
+        ringTerminals,
+        wireTypes,
+        accessoryMaterials
+      };
+      const result = importCatalogAdditive(existingCatalog, text);
+
+      setConnectorHousings(
+        result.catalog.connectorHousings.map((housing) => ({
+          ...housing,
+          notes: housing.notes ?? '',
+          terminals: housing.terminals.map((terminal) => ({ ...terminal, notes: terminal.notes ?? '' })),
+          seals: housing.seals.map((seal) => ({ ...seal, notes: seal.notes ?? '' })),
+          plugs: housing.plugs.map((plug) => ({ ...plug, notes: plug.notes ?? '' }))
+        }))
+      );
+      setRingTerminals(result.catalog.ringTerminals.map((item) => ({ ...item, notes: item.notes ?? '' })));
+      setWireTypes(result.catalog.wireTypes.map((item) => ({ ...item, notes: item.notes ?? '' })));
+      setAccessoryMaterials(result.catalog.accessoryMaterials.map((item) => ({ ...item, notes: item.notes ?? '' })));
+      setManifestMessage(
+        `Catalog import complete: added ${result.summary.added}, skipped duplicates ${result.summary.skippedDuplicates}, invalid ${result.summary.invalid}.`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown catalog TOML import error.';
+      setManifestMessage(`Catalog import failed: ${message}`);
+    } finally {
+      event.target.value = '';
+    }
+  };
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-3">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
+        <section className="rounded-lg border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={handleExportManifest}>
+              Export Catalog Manifest
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={handleImportManifestClick}>
+              Import Catalog Manifest
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".toml,text/toml"
+              className="hidden"
+              onChange={handleImportManifestChange}
+            />
+            {manifestMessage ? <p className="text-xs text-muted-foreground">{manifestMessage}</p> : null}
+          </div>
+        </section>
         <ConnectorHousingSection housingItems={connectorHousings} onHousingItemsChange={setConnectorHousings} />
-        <RingTerminalSection />
+        <RingTerminalSection ringTerminalItems={ringTerminals} onRingTerminalItemsChange={setRingTerminals} />
         <WireTypesSection wireTypeItems={wireTypes} onWireTypeItemsChange={setWireTypes} />
-        <AccessoryMaterialsSection />
+        <AccessoryMaterialsSection accessoryItems={accessoryMaterials} onAccessoryItemsChange={setAccessoryMaterials} />
       </div>
     </div>
   );
