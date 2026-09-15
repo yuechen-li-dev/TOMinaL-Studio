@@ -396,11 +396,21 @@ export function importHarnessFromToml(text: string): HarnessDocument {
   const name = expectString(parsed.name, 'name');
   const drawingType = expectString(parsed.drawing_type, 'drawing_type');
 
+  if (version !== '0.1') {
+    throw new Error(`Unsupported harness version: ${version}.`);
+  }
+  if (units !== 'mm') {
+    throw new Error(`Unsupported harness units: ${units}.`);
+  }
+  if (drawingType !== 'formboard') {
+    throw new Error(`Unsupported harness drawing_type: ${drawingType}.`);
+  }
+
   const document: HarnessDocument = {
-    version: version as HarnessDocument['version'],
-    units: units as HarnessDocument['units'],
+    version,
+    units,
     name,
-    drawingType: drawingType as HarnessDocument['drawingType'],
+    drawingType,
     board: parseBoard(parsed.board),
     connectors: parseConnectors(parsed.connectors),
     branches: parseBranches(parsed.branches),
