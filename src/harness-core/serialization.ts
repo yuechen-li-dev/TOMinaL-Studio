@@ -41,6 +41,7 @@ export const harnessCatalogSnapshotSchema = z.object({
         name: id,
         manufacturer: z.string().optional(),
         housingPartId: id.optional(),
+        housingPartNumber: id.optional(),
         cavities: z.array(
           z.object({
             id,
@@ -133,7 +134,8 @@ export const harnessIrSchema = z.object({
       sealPartId: id.optional(),
       ringTerminalPartId: id.optional(),
       processRef: id.optional(),
-      stripLengthMm: finite.nonnegative().optional()
+      stripLengthMm: finite.nonnegative().optional(),
+      terminationAllowanceMm: finite.nonnegative().optional()
     })
   ),
   electricalSplices: z.array(

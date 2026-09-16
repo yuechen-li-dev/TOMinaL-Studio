@@ -5,14 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:desktop": "vite --port 1420 --strictPort",
     "build": "tsc -b && vite build",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
+    "desktop:test": "cargo test --manifest-path src-tauri/Cargo.toml",
     "preview": "vite preview",
     "test": "vitest run",
     "formboard:evidence": "vite-node scripts/generate-formboard-evidence.ts",
+    "artifacts:build": "vite-node scripts/build-controller-chassis-artifacts.ts",
     "ui:profile": "node scripts/profile-ui.mjs",
-    "ui:qualify": "node scripts/qualify-ui.mjs"
+    "ui:qualify": "node scripts/qualify-ui.mjs",
+    "artifacts:qualify-ui": "node scripts/qualify-artifacts-ui.mjs"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
     "@xyflow/react": "^12.5.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -25,6 +33,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.5.0",

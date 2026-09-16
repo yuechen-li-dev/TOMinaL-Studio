@@ -34,6 +34,7 @@ export function generateConnectorDeclarations(snapshot: HarnessCatalogSnapshot):
     lines.push(`  name: ${JSON.stringify(family.name)},`);
     if (family.manufacturer) lines.push(`  manufacturer: ${JSON.stringify(family.manufacturer)},`);
     if (family.housingPartId) lines.push(`  housingPartId: catalogPartId(${JSON.stringify(family.housingPartId)}),`);
+    if (family.housingPartNumber) lines.push(`  housingPartNumber: ${JSON.stringify(family.housingPartNumber)},`);
     lines.push('  cavities: {');
     for (const cavity of [...family.cavities].sort((left, right) => left.id.localeCompare(right.id))) {
       lines.push(`    ${JSON.stringify(cavityKey(family.id, cavity.id))}: {`);

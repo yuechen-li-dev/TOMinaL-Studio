@@ -144,13 +144,18 @@ await selectTab('Formboard');
 results.push(await sample('formboard-idle'));
 await page.screenshot({ path: path.join(outputDirectory, 'formboard.png'), fullPage: true });
 
+for (const workspace of ['Wires', 'BOM', 'Quote', 'Manufacturing']) {
+  await selectTab(workspace);
+  results.push(await sample(`${workspace.toLowerCase()}-idle`));
+}
+
 await selectTab('Catalog', 'Material Catalog');
 results.push(await sample('catalog-idle'));
 await page.screenshot({ path: path.join(outputDirectory, 'catalog.png'), fullPage: true });
 
 const activityBeforeSwitches = await readActivity();
 const metricsBeforeSwitches = await readMetrics();
-for (const tab of [['Logical', 'Graph'], ['Formboard'], ['Catalog', 'Material Catalog'], ['Logical', 'Graph'], ['Formboard'], ['Logical', 'Graph']]) {
+for (const tab of [['Logical', 'Graph'], ['Formboard'], ['Wires'], ['BOM'], ['Quote'], ['Manufacturing'], ['Catalog', 'Material Catalog'], ['Logical', 'Graph']]) {
   await selectTab(...tab);
 }
 const activityAfterSwitches = await readActivity();

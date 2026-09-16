@@ -86,6 +86,7 @@ export type ConnectorFamilyDefinition = {
   readonly name: string;
   readonly manufacturer?: string;
   readonly housingPartId?: CatalogPartId;
+  readonly housingPartNumber?: string;
   readonly cavities: readonly CavityDefinition[];
 };
 
@@ -158,6 +159,7 @@ export type Termination = {
   readonly ringTerminalPartId?: CatalogPartId;
   readonly processRef?: CatalogPartId;
   readonly stripLengthMm?: Millimeters;
+  readonly terminationAllowanceMm?: Millimeters;
 };
 
 export type Conductor = {
@@ -248,4 +250,3 @@ export type HarnessIr = {
   readonly legacyPlacementProposals?: readonly LegacyPlacementProposal[];
   readonly provenance?: { readonly sourceKind: 'typed-authoring' | 'v0.1-migration'; readonly sourceId?: string };
 };
-

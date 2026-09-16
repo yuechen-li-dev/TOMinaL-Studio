@@ -67,6 +67,7 @@ export type EndpointManufacturing = {
   readonly ringTerminalPartId?: CatalogPartId;
   readonly processRef?: CatalogPartId;
   readonly stripLengthMm?: number;
+  readonly terminationAllowanceMm?: number;
 };
 
 export type AuthoredEndpoint = EndpointManufacturing & {
@@ -134,7 +135,8 @@ function makeTermination(conductorKey: string, end: 'A' | 'B', authored: Authore
     sealPartId: authored.sealPartId,
     ringTerminalPartId: authored.ringTerminalPartId,
     processRef: authored.processRef,
-    stripLengthMm: authored.stripLengthMm === undefined ? undefined : mm(authored.stripLengthMm)
+    stripLengthMm: authored.stripLengthMm === undefined ? undefined : mm(authored.stripLengthMm),
+    terminationAllowanceMm: authored.terminationAllowanceMm === undefined ? undefined : mm(authored.terminationAllowanceMm)
   };
 }
 

@@ -24,6 +24,7 @@ export type ConnectorFamilySource<
   readonly name: string;
   readonly manufacturer?: string;
   readonly housingPartId?: CatalogPartId;
+  readonly housingPartNumber?: string;
   readonly cavities: TCavities;
 };
 
@@ -49,6 +50,7 @@ export function defineConnectorFamily<
       name: source.name,
       manufacturer: source.manufacturer,
       housingPartId: source.housingPartId,
+      housingPartNumber: source.housingPartNumber,
       cavities: Object.entries(source.cavities)
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([key, value]) => ({
@@ -67,4 +69,3 @@ export function defineConnectorFamily<
 export function connectorFamilyIdOf(family: TypedConnectorFamily): ConnectorFamilyId {
   return family.definition.id;
 }
-

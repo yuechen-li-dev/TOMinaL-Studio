@@ -79,7 +79,7 @@ describe('HarnessIr vNext', () => {
   });
 
   it('generates connector declarations deterministically and ties them to the catalog hash', () => {
-    expect(controllerChassisCatalog.snapshotHash).toBe('fnv1a32:0593e61e');
+    expect(controllerChassisCatalog.snapshotHash).toBe('fnv1a32:e1e1b7f1');
     const first = generateConnectorDeclarations(controllerChassisCatalog);
     expect(generateConnectorDeclarations(controllerChassisCatalog)).toBe(first);
     expect(first).toContain(`// Catalog hash: ${controllerChassisCatalog.snapshotHash}`);

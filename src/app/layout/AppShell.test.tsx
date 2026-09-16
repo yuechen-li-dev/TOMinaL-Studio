@@ -81,4 +81,51 @@ describe('engineering shell', () => {
     expect(screen.getByText('Destructive edit plan')).toBeTruthy();
     expect(screen.getByText('conductor:WIRE_MOTOR_POS')).toBeTruthy();
   });
+
+  it('keeps project open and save available in the browser build', async () => {
+    const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:project');
+    const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const inputClick = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => undefined);
+    render(<App />);
+
+    expect(screen.getByText('Browser · Unsaved project')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Project' }));
+    expect(inputClick).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Save Project' }));
+    expect(anchorClick).toHaveBeenCalledOnce();
+    expect(await screen.findByText('Downloaded · controller-chassis.tominal.json')).toBeTruthy();
+
+    createObjectUrl.mockRestore(); revokeObjectUrl.mockRestore(); anchorClick.mockRestore(); inputClick.mockRestore();
+  });
+
+  it('projects wires, BOM, quote, selection, refresh, and manufacturing exports without editable artifact state', async () => {
+    const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wires' }));
+    expect(await screen.findByText('Wire Cut List')).toBeTruthy();
+    fireEvent.click(screen.getAllByText('WIRE_MOTOR_POS')[1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Formboard' }));
+    expect(await screen.findByText('Formboard selection: WIRE_MOTOR_POS')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'BOM' }));
+    expect(await screen.findByText('Bill of Materials')).toBeTruthy();
+    expect(screen.getByText('DEMO-HOUSING-MOTOR-3')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quote' }));
+    expect(await screen.findByText('Quote Snapshot')).toBeTruthy();
+    expect(screen.getByText(/Demo Estimate \/ Local Fixture Pricing/)).toBeTruthy();
+    const before = screen.getAllByText(/2026-09-15T12:00:00.000Z/).length;
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh snapshot' }));
+    expect(await screen.findAllByText(/2026-09-15T12:00:01.000Z/)).toHaveLength(before);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manufacturing' }));
+    expect(await screen.findByText('tominal.lock.toml')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Export All Artifacts' }));
+    expect(click).toHaveBeenCalledTimes(8);
+    createObjectUrl.mockRestore(); revokeObjectUrl.mockRestore(); click.mockRestore();
+  });
 });
