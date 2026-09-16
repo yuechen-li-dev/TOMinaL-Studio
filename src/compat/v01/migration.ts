@@ -26,9 +26,12 @@ import type {
   RouteEndpoint,
   WireTypeDefinition
 } from '@/harness-core/model';
+import { migrateV01Formboard } from '@/formboard/legacyMigration';
+import type { FormboardDocument } from '@/formboard/model';
 
 export type MigrationResult = {
   readonly ir: HarnessIr;
+  readonly formboard: FormboardDocument;
   readonly diagnostics: readonly Diagnostic[];
 };
 
@@ -264,9 +267,8 @@ export function migrateV01(document: HarnessDocument): MigrationResult {
     }))
   ];
 
-  return {
-    ir: {
-      schemaVersion: '1.0',
+  const ir: HarnessIr = {
+    schemaVersion: '1.0',
       id: harnessId(`legacy.${safeId(document.name)}`),
       metadata: { name: document.name },
       catalog,
@@ -283,8 +285,12 @@ export function migrateV01(document: HarnessDocument): MigrationResult {
       routes,
       routeSegments,
       legacyPlacementProposals: placements,
-      provenance: { sourceKind: 'v0.1-migration', sourceId: document.name }
-    },
-    diagnostics
+    provenance: { sourceKind: 'v0.1-migration', sourceId: document.name }
+  };
+  const physical = migrateV01Formboard(document, ir);
+  return {
+    ir,
+    formboard: physical.formboard,
+    diagnostics: [...diagnostics, ...physical.diagnostics]
   };
 }

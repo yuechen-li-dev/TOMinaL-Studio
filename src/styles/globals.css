@@ -36,3 +36,29 @@ body {
 #root {
   min-height: 100vh;
 }
+
+.react-flow__node-default {
+  border: 1px solid #334155 !important;
+  border-radius: 2px !important;
+  background: #172033 !important;
+  color: #dbeafe !important;
+  font-size: 11px !important;
+  box-shadow: 0 6px 18px rgb(2 6 23 / 35%);
+}
+
+.react-flow__node-default.selected {
+  border-color: #22d3ee !important;
+  box-shadow: 0 0 0 2px rgb(34 211 238 / 25%);
+}
+
+.catalog-workspace section {
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+.catalog-workspace button,
+.catalog-workspace input,
+.catalog-workspace select,
+.catalog-workspace textarea {
+  border-radius: 2px !important;
+}

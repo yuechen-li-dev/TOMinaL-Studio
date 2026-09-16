@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
+import { Fragment, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 
 import {
   validateAccessoryMaterial,
@@ -1715,22 +1715,30 @@ function ConnectorHousingSection({
   );
 }
 
-export function MaterialCatalogView({ onCatalogChange }: { onCatalogChange?: (catalog: MaterialCatalogData) => void }) {
-  const [connectorHousings, setConnectorHousings] = useState<ConnectorHousingItem[]>([]);
-  const [ringTerminals, setRingTerminals] = useState<RingTerminalItem[]>([]);
-  const [wireTypes, setWireTypes] = useState<WireTypeItem[]>([]);
-  const [accessoryMaterials, setAccessoryMaterials] = useState<AccessoryMaterialItem[]>([]);
+export function MaterialCatalogView({ catalog, onCatalogChange }: {
+  catalog: MaterialCatalogData;
+  onCatalogChange: (catalog: MaterialCatalogData) => void;
+}) {
+  const connectorHousings: ConnectorHousingItem[] = catalog.connectorHousings.map((housing) => ({
+    ...housing,
+    notes: housing.notes ?? '',
+    terminals: housing.terminals.map((item) => ({ ...item, notes: item.notes ?? '' })),
+    seals: housing.seals.map((item) => ({ ...item, notes: item.notes ?? '' })),
+    plugs: housing.plugs.map((item) => ({ ...item, notes: item.notes ?? '' }))
+  }));
+  const ringTerminals: RingTerminalItem[] = catalog.ringTerminals.map((item) => ({ ...item, notes: item.notes ?? '' }));
+  const wireTypes: WireTypeItem[] = catalog.wireTypes.map((item) => ({ ...item, notes: item.notes ?? '' }));
+  const accessoryMaterials: AccessoryMaterialItem[] = catalog.accessoryMaterials.map((item) => ({ ...item, notes: item.notes ?? '' }));
   const [manifestMessage, setManifestMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    onCatalogChange?.({
-      connectorHousings,
-      ringTerminals,
-      wireTypes,
-      accessoryMaterials
-    });
-  }, [accessoryMaterials, connectorHousings, onCatalogChange, ringTerminals, wireTypes]);
+  const update = <T,>(key: keyof MaterialCatalogData, current: T) => (value: SetStateAction<T>) => {
+    const next = typeof value === 'function' ? (value as (previous: T) => T)(current) : value;
+    onCatalogChange({ ...catalog, [key]: next });
+  };
+  const setConnectorHousings = update('connectorHousings', connectorHousings);
+  const setRingTerminals = update('ringTerminals', ringTerminals);
+  const setWireTypes = update('wireTypes', wireTypes);
+  const setAccessoryMaterials = update('accessoryMaterials', accessoryMaterials);
 
   const handleExportManifest = () => {
     const toml = exportCatalogToToml({ connectorHousings, ringTerminals, wireTypes, accessoryMaterials });

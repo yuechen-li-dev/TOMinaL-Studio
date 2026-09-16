@@ -1,242 +1,63 @@
-import { useMemo, useState } from 'react';
+import { Boxes, Cable, CircuitBoard, Download, PanelTop, ShieldCheck } from 'lucide-react';
+import { lazy, Suspense, useMemo } from 'react';
 
-import { emptyMaterialCatalogData, type MaterialCatalogData } from '@/catalog/catalogData';
-import { MaterialCatalogView } from '@/app/catalog/MaterialCatalogView';
-import type { SelectionState, UiState } from '@/app/App';
-import { LeftSidebar } from '@/app/layout/LeftSidebar';
-import { RightInspector } from '@/app/layout/RightInspector';
-import type { CatalogSelectOption } from '@/components/CatalogIdSelect';
-import { TopBar } from '@/app/layout/TopBar';
-import { WorkspaceTabs, type WorkspaceTab } from '@/app/layout/WorkspaceTabs';
-import {
-  addBranch,
-  addConnector,
-  addSegment,
-  addSplice,
-  deleteWire,
-  moveNode,
-  setConnectorPinCount,
-  updateConnector,
-  updateConnectorPin,
-  updateSegment,
-  updateWire
-} from '@/core/harnessMutations';
-import type { ConnectorPin, HarnessDocument, XY } from '@/core/harnessModel';
-import { exportHarnessToToml, importHarnessFromToml } from '@/core/tomlCodec';
-import { generateWiresFromSignals, type WireGenerationReport } from '@/core/wireGeneration';
-import { toFlowEdges, toFlowNodes } from '@/core/graphAdapter';
-import { validateGraphCompatibility, summarizeGraphValidation } from '@/core/graphValidation';
-import { countNodes, countSegments, countWires } from '@/core/harnessSelectors';
-import { FlowCanvas } from '@/flow/FlowCanvas';
-import type { TominalNodeKind } from '@/flow/flowTypes';
+import type { AppCommandDispatcher, Selection, WorkspaceId } from '@/app/session/appSession';
+import type { MaterialCatalogData } from '@/catalog/catalogData';
+import { exportFormboardSvg, validateFormboard, type TominalProject } from '@/formboard';
+import { validateHarnessIr } from '@/harness-core';
+import { CommandPalette } from './CommandPalette';
+import { EntityBrowser } from './EntityBrowser';
+import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
+import { WorkspaceInspector } from './WorkspaceInspector';
 
-type AppShellProps = {
-  document: HarnessDocument;
-  onDocumentChange: React.Dispatch<React.SetStateAction<HarnessDocument>>;
-  uiState: UiState;
-  onUiStateChange: React.Dispatch<React.SetStateAction<UiState>>;
-  selection: SelectionState;
-  onSelectionChange: (selection: SelectionState) => void;
-};
+const LogicalWorkspace = lazy(() => import('@/app/logical/LogicalWorkspace'));
+const FormboardWorkspace = lazy(() => import('@/app/formboard/FormboardWorkspace').then((module) => ({ default: module.FormboardWorkspace })));
+const CatalogWorkspace = lazy(() => import('@/app/catalog/CatalogWorkspace'));
 
-const getNewNodePosition = (index: number): XY => [120 + (index % 4) * 140, 120 + Math.floor(index / 4) * 120];
+const modes: readonly { id: WorkspaceId; label: string; icon: typeof Cable }[] = [
+  { id: 'logical', label: 'Logical', icon: CircuitBoard },
+  { id: 'formboard', label: 'Formboard', icon: PanelTop },
+  { id: 'catalog', label: 'Catalog', icon: Boxes }
+];
 
-export function AppShell({
-  document,
-  onDocumentChange,
-  uiState,
-  onUiStateChange,
-  selection,
-  onSelectionChange
-}: AppShellProps) {
-  const [wireGenerationReport, setWireGenerationReport] = useState<WireGenerationReport | null>(null);
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>('graph');
-  const [catalog, setCatalog] = useState<MaterialCatalogData>(emptyMaterialCatalogData);
-
-  const handleExportDocument = () => {
-    const toml = exportHarnessToToml(document);
-    const blob = new Blob([toml], { type: 'text/toml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = globalThis.document.createElement('a');
+export function AppShell({ project, catalog, selection, workspace, dispatch }: {
+  project: TominalProject;
+  catalog: MaterialCatalogData;
+  selection: Selection;
+  workspace: WorkspaceId;
+  dispatch: AppCommandDispatcher;
+}) {
+  const diagnostics = useMemo(() => [...validateHarnessIr(project.harness), ...validateFormboard(project.harness, project.formboard)], [project]);
+  const exportSvg = () => {
+    const svg = exportFormboardSvg(project.harness, project.formboard);
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `${document.name || 'harness'}.toml`;
+    link.download = `${project.harness.id}-formboard.svg`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
-  const handleImportDocument = async (file: File) => {
-    try {
-      const text = await file.text();
-      const importedDocument = importHarnessFromToml(text);
-      onDocumentChange(importedDocument);
-      onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [] });
-      onUiStateChange({ collapsedConnectorIds: {} });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown TOML import error.';
-      window.alert(`Import failed: ${message}`);
-    }
-  };
-
-  const connectorCallbacks = useMemo(
-    () => ({
-      onToggleCollapse: (connectorId: string) => {
-        onUiStateChange((current) => ({
-          ...current,
-          collapsedConnectorIds: {
-            ...current.collapsedConnectorIds,
-            [connectorId]: !(current.collapsedConnectorIds[connectorId] ?? true)
-          }
-        }));
-      },
-      onPartNumberChange: (connectorId: string, partNumber: string) => {
-        onDocumentChange((current) => updateConnector(current, connectorId, { partNumber: partNumber || undefined }));
-      },
-      onHousingIdChange: (connectorId: string, housingId: string | undefined) => {
-        onDocumentChange((current) => updateConnector(current, connectorId, { housingId: housingId || undefined }));
-      },
-      onPinCountChange: (connectorId: string, pinCount: number) => {
-        onDocumentChange((current) => setConnectorPinCount(current, connectorId, pinCount));
-      },
-      onPinChange: (connectorId: string, pinId: string, patch: Partial<ConnectorPin>) => {
-        onDocumentChange((current) => updateConnectorPin(current, connectorId, pinId, patch));
-      }
-    }),
-    [onDocumentChange, onUiStateChange]
-  );
-
-
-  const housingOptions = useMemo<CatalogSelectOption[]>(
-    () =>
-      catalog.connectorHousings.map((housing) => ({
-        id: housing.id,
-        label: housing.partNumber,
-        secondary: housing.manufacturer || housing.description
-      })),
-    [catalog.connectorHousings]
-  );
-
-  const wireTypeOptions = useMemo<CatalogSelectOption[]>(
-    () =>
-      catalog.wireTypes.map((wireType) => ({
-        id: wireType.id,
-        label: wireType.partNumber,
-        secondary: wireType.gauge || wireType.insulationType
-      })),
-    [catalog.wireTypes]
-  );
-
-  const collapsedConnectorIds = uiState.collapsedConnectorIds;
-
-  const nodes = useMemo(
-    () =>
-      toFlowNodes(document, {
-        collapsedConnectorIds,
-        connectorCallbacks,
-        housingOptions
-      }),
-    [document, collapsedConnectorIds, connectorCallbacks, housingOptions]
-  );
-  const segments = useMemo(() => toFlowEdges(document), [document]);
-
-  const summary = useMemo(
-    () => ({
-      nodeCount: countNodes(document),
-      edgeCount: countSegments(document),
-      wireCount: countWires(document)
-    }),
-    [document]
-  );
-
-
-  const validationResults = useMemo(() => validateGraphCompatibility(document, catalog), [catalog, document]);
-  const validationSummary = useMemo(() => summarizeGraphValidation(validationResults), [validationResults]);
-  const validationHighlights = useMemo(
-    () => validationResults.filter((result) => result.status !== 'valid').slice(0, 4),
-    [validationResults]
-  );
-
-  const handleAddNode = (kind: TominalNodeKind) => {
-    const nextIndex = countNodes(document) + 1;
-    const position = getNewNodePosition(nextIndex);
-
-    onDocumentChange((current) => {
-      if (kind === 'connector') {
-        return addConnector(current, { position });
-      }
-      if (kind === 'branch') {
-        return addBranch(current, { position });
-      }
-      return addSplice(current, { position });
-    });
-  };
-
-  const canCreateSegment = selection.selectedNodeIds.length === 2;
-
-  const handleCreateSegment = () => {
-    if (!canCreateSegment) {
-      return;
-    }
-
-    const [from, to] = selection.selectedNodeIds;
-    onDocumentChange((current) => addSegment(current, { from, to, geometry: 'spline' }));
-  };
-
-  const handleGenerateWiresFromSignals = () => {
-    onDocumentChange((current) => {
-      const { document: nextDocument, report } = generateWiresFromSignals(current);
-      setWireGenerationReport(report);
-      return nextDocument;
-    });
-  };
-
-  return (
-    <div className="flex h-full flex-col">
-      <TopBar onImport={handleImportDocument} onExport={handleExportDocument} />
-      <WorkspaceTabs selectedTab={activeTab} onTabChange={setActiveTab} />
-      <div
-        className={
-          activeTab === 'graph'
-            ? 'grid min-h-0 flex-1 grid-cols-[280px_1fr_320px] gap-3 p-3'
-            : 'hidden min-h-0 flex-1 grid-cols-[280px_1fr_320px] gap-3 p-3'
-        }
-      >
-        <LeftSidebar
-          summary={summary}
-          onAddNode={handleAddNode}
-          onCreateSegment={handleCreateSegment}
-          canCreateSegment={canCreateSegment}
-          onGenerateWiresFromSignals={handleGenerateWiresFromSignals}
-          wireGenerationReport={wireGenerationReport}
-          validationSummary={validationSummary}
-          validationHighlights={validationHighlights}
-        />
-        <FlowCanvas
-          nodes={nodes}
-          segments={segments}
-          onMoveNode={(nodeId, position) => onDocumentChange((current) => moveNode(current, nodeId, position))}
-          onSelectionChange={onSelectionChange}
-        />
-        <RightInspector
-          document={document}
-          selection={selection}
-          onSegmentNominalLengthChange={(segmentId, nominalLengthMm) =>
-            onDocumentChange((current) => updateSegment(current, segmentId, { nominalLengthMm }))
-          }
-          onWireDelete={(wireId) => {
-            onDocumentChange((current) => deleteWire(current, wireId));
-            onSelectionChange({ selectedNodeIds: [], selectedSegmentIds: [], selectedWireIds: [] });
-          }}
-          onWireChange={(wireId, patch) => onDocumentChange((current) => updateWire(current, wireId, patch))}
-          onConnectorChange={(connectorId, patch) => onDocumentChange((current) => updateConnector(current, connectorId, patch))}
-          housingOptions={housingOptions}
-          wireTypeOptions={wireTypeOptions}
-        />
-      </div>
-      {activeTab === 'material-catalog' && (
-        <div className="min-h-0 flex-1">
-          <MaterialCatalogView onCatalogChange={setCatalog} />
-        </div>
-      )}
+  return <div className="grid h-full min-h-0 grid-rows-[46px_38px_1fr_28px] overflow-hidden bg-slate-950">
+    <header className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-3">
+      <div className="flex items-center gap-3"><div className="flex h-7 w-7 items-center justify-center bg-cyan-500 text-slate-950"><Cable className="h-4 w-4" /></div><div><h1 className="text-sm font-semibold tracking-wide">TOMinaL Studio</h1><p className="text-[10px] text-slate-500">{project.harness.metadata.name}</p></div><span className="border border-slate-700 px-1.5 py-0.5 text-[9px] font-semibold tracking-wider text-slate-500">UI-X1</span></div>
+      <div className="flex items-center gap-2"><button type="button" className="flex items-center gap-1.5 border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-400 hover:text-slate-100" onClick={exportSvg}><Download className="h-3.5 w-3.5" />Export 1:1 SVG</button><CommandPalette dispatch={dispatch} /></div>
+    </header>
+    <nav className="flex items-center gap-1 border-b border-slate-800 bg-slate-900/80 px-2" aria-label="Primary workspace">
+      {modes.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-current={workspace === id ? 'page' : undefined} className={`flex h-full items-center gap-2 border-b-2 px-3 text-xs font-medium ${workspace === id ? 'border-cyan-400 bg-slate-800 text-cyan-200' : 'border-transparent text-slate-500 hover:text-slate-200'}`} onClick={() => dispatch({ type: 'workspace.switch', workspace: id })}><Icon className="h-3.5 w-3.5" />{label}</button>)}
+      <div className="ml-3 h-4 w-px bg-slate-800" /><span className="px-2 text-[10px] text-slate-700">Wires · BOM · Manufacturing · Quote</span>
+    </nav>
+    <div className="grid min-h-0 grid-cols-[230px_minmax(0,1fr)_286px]">
+      <EntityBrowser harness={project.harness} selection={selection} dispatch={dispatch} />
+      <main className="min-h-0 min-w-0 bg-slate-950">
+        <WorkspaceErrorBoundary name={workspace}><Suspense fallback={<div className="flex h-full items-center justify-center text-xs text-slate-500">Loading {workspace} workspace…</div>}>
+          {workspace === 'logical' ? <LogicalWorkspace harness={project.harness} selection={selection} dispatch={dispatch} /> : null}
+          {workspace === 'formboard' ? <FormboardWorkspace project={project} document={project.formboard} selection={selection} dispatch={dispatch} /> : null}
+          {workspace === 'catalog' ? <CatalogWorkspace catalog={catalog} dispatch={dispatch} /> : null}
+        </Suspense></WorkspaceErrorBoundary>
+      </main>
+      <WorkspaceInspector project={project} selection={selection} diagnostics={diagnostics} dispatch={dispatch} workspace={workspace} />
     </div>
-  );
+    <footer className="flex items-center justify-between border-t border-slate-800 bg-slate-900 px-3 text-[10px] text-slate-500"><div className="flex items-center gap-4"><span className="flex items-center gap-1.5"><ShieldCheck className={`h-3 w-3 ${diagnostics.length ? 'text-amber-400' : 'text-emerald-400'}`} />{diagnostics.length} diagnostics</span><span>{project.harness.connectorOccurrences.length} connectors</span><span>{project.harness.conductors.length} conductors</span></div><div className="flex items-center gap-4"><span>{selection.primary ? `${selection.primary.kind}:${selection.primary.id}` : 'No selection'}</span><span className="uppercase tracking-wider text-slate-600">mm · {workspace}</span></div></footer>
+  </div>;
 }

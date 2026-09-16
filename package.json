@@ -7,13 +7,17 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "formboard:evidence": "vite-node scripts/generate-formboard-evidence.ts",
+    "ui:profile": "node scripts/profile-ui.mjs",
+    "ui:qualify": "node scripts/qualify-ui.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.5.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
+    "machinalayout": "file:../../MachinaLayout.JS",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "smol-toml": "^1.6.0",
@@ -29,10 +33,12 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "jsdom": "^29.0.0",
+    "playwright": "^1.63.0",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
+    "vite-node": "^3.2.4",
     "vitest": "^4.1.0"
   }
 }

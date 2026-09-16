@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 
-type WorkspaceTab = 'graph' | 'material-catalog';
+type WorkspaceTab = 'graph' | 'formboard' | 'material-catalog';
 
 type WorkspaceTabsProps = {
   selectedTab: WorkspaceTab;
@@ -9,6 +9,7 @@ type WorkspaceTabsProps = {
 
 const tabs: Array<{ id: WorkspaceTab; label: string }> = [
   { id: 'graph', label: 'Graph' },
+  { id: 'formboard', label: 'Formboard' },
   { id: 'material-catalog', label: 'Material Catalog' }
 ];
 

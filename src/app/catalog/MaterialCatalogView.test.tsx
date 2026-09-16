@@ -1,12 +1,19 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { useState } from 'react';
 
 afterEach(() => {
   cleanup();
 });
 
 import { MaterialCatalogView } from '@/app/catalog/MaterialCatalogView';
+import { emptyMaterialCatalogData, type MaterialCatalogData } from '@/catalog/catalogData';
+
+function CatalogHarness() {
+  const [catalog, setCatalog] = useState<MaterialCatalogData>(emptyMaterialCatalogData);
+  return <MaterialCatalogView catalog={catalog} onCatalogChange={setCatalog} />;
+}
 
 function getSection(title: string): HTMLElement {
   const heading = screen.getByRole('heading', { name: title });
@@ -21,7 +28,7 @@ function getSection(title: string): HTMLElement {
 
 describe('MaterialCatalogView collapsed catalog forms', () => {
   it('hides each top-level add form by default', () => {
-    render(<MaterialCatalogView />);
+    render(<CatalogHarness />);
 
     expect(screen.getByRole('button', { name: 'New Housing' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'New Ring Terminal' })).toBeTruthy();
@@ -35,7 +42,7 @@ describe('MaterialCatalogView collapsed catalog forms', () => {
   });
 
   it('shows a section form when clicking New action', () => {
-    render(<MaterialCatalogView />);
+    render(<CatalogHarness />);
 
     const wireSection = getSection('Wire Types');
     fireEvent.click(within(wireSection).getByRole('button', { name: 'New Wire Type' }));
@@ -45,7 +52,7 @@ describe('MaterialCatalogView collapsed catalog forms', () => {
   });
 
   it('collapses a form after a successful add', () => {
-    render(<MaterialCatalogView />);
+    render(<CatalogHarness />);
 
     const accessorySection = getSection('Accessory Materials');
     fireEvent.click(within(accessorySection).getByRole('button', { name: 'New Accessory' }));
@@ -64,7 +71,7 @@ describe('MaterialCatalogView collapsed catalog forms', () => {
   });
 
   it('reveals the form when entering edit mode', () => {
-    render(<MaterialCatalogView />);
+    render(<CatalogHarness />);
 
     const ringSection = getSection('Ring Terminals');
     fireEvent.click(within(ringSection).getByRole('button', { name: 'New Ring Terminal' }));
