@@ -3,11 +3,15 @@ import { controllerChassisHarness } from './controllerChassis.harness';
 import {
   connectorOccurrenceId,
   electricalSpliceId,
+  catalogPartId,
+  labelId,
   mm,
   routeId,
   routeJunctionId,
   routeSegmentId,
+  sleeveId,
   studId,
+  tapeWrapId,
   type HarnessIr,
   type RouteEndpoint
 } from '@/harness-core';
@@ -23,6 +27,7 @@ const definitions = [
   ['SEG_POWER_OUT', junction('JUNCTION_PANEL_FANOUT'), connector('PANEL_POWER'), [pointMm(600, 260), pointMm(430, 140), pointMm(85, 120)]],
   ['SEG_MOTOR_IN', connector('PCB_MOTOR'), junction('JUNCTION_PANEL_FANOUT'), [pointMm(350, 235), pointMm(470, 235), pointMm(600, 260)]],
   ['SEG_MOTOR_OUT', junction('JUNCTION_PANEL_FANOUT'), connector('PANEL_MOTOR'), [pointMm(600, 260), pointMm(710, 220), pointMm(820, 190)]],
+  ['SEG_MOTOR_ENABLE_OUT', junction('JUNCTION_PANEL_FANOUT'), connector('PANEL_MOTOR'), [pointMm(600, 260), pointMm(690, 250), pointMm(820, 190)]],
   ['SEG_SENSOR', connector('PCB_SENSOR'), connector('PANEL_SENSOR'), [pointMm(350, 330), pointMm(560, 350), pointMm(820, 330)]],
   ['SEG_SERVICE', connector('PCB_SERVICE'), connector('PANEL_SERVICE'), [pointMm(260, 370), pointMm(500, 430), pointMm(820, 450)]],
   ['SEG_GROUND_PCB', connector('PCB_POWER'), splice('SPLICE_GROUND'), [pointMm(260, 240), pointMm(220, 360), pointMm(165, 455)]],
@@ -39,6 +44,7 @@ const routeSegments = definitions.map(([id, from, to]) => ({
 const routes = [
   { id: routeId('ROUTE_POWER'), segmentIds: [routeSegmentId('SEG_POWER_IN'), routeSegmentId('SEG_POWER_OUT')] },
   { id: routeId('ROUTE_MOTOR'), segmentIds: [routeSegmentId('SEG_MOTOR_IN'), routeSegmentId('SEG_MOTOR_OUT')] },
+  { id: routeId('ROUTE_MOTOR_ENABLE'), segmentIds: [routeSegmentId('SEG_MOTOR_IN'), routeSegmentId('SEG_MOTOR_ENABLE_OUT')] },
   { id: routeId('ROUTE_SENSOR'), segmentIds: [routeSegmentId('SEG_SENSOR')] },
   { id: routeId('ROUTE_SERVICE'), segmentIds: [routeSegmentId('SEG_SERVICE')] },
   { id: routeId('ROUTE_GROUND_PCB'), segmentIds: [routeSegmentId('SEG_GROUND_PCB')] },
@@ -51,7 +57,7 @@ const conductorRoute = new Map<string, ReturnType<typeof routeId>>([
   ['WIRE_VIN_NEG', routeId('ROUTE_POWER')],
   ['WIRE_MOTOR_POS', routeId('ROUTE_MOTOR')],
   ['WIRE_MOTOR_NEG', routeId('ROUTE_MOTOR')],
-  ['WIRE_MOTOR_ENABLE', routeId('ROUTE_MOTOR')],
+  ['WIRE_MOTOR_ENABLE', routeId('ROUTE_MOTOR_ENABLE')],
   ['WIRE_ENCODER_A', routeId('ROUTE_SENSOR')],
   ['WIRE_ENCODER_B', routeId('ROUTE_SENSOR')],
   ['WIRE_TEMPERATURE', routeId('ROUTE_SENSOR')],
@@ -84,7 +90,7 @@ const connectorPositions = new Map([
 ]);
 
 export const controllerChassisFormboard: FormboardDocument = {
-  formboardVersion: '1',
+  formboardVersion: '2',
   harnessId: controllerChassisRoutedHarness.id,
   title: 'Small Control Chassis Harness — Manufacturing Formboard',
   revision: 'X1',
@@ -130,6 +136,12 @@ export const controllerChassisFormboard: FormboardDocument = {
     { id: 'chassis-outline', kind: 'chassis', origin: pointMm(45, 70), widthMm: mm(810), heightMm: mm(470), label: 'CONTROL CHASSIS' },
     { id: 'pcb-outline', kind: 'pcb', origin: pointMm(225, 195), widthMm: mm(165), heightMm: mm(220), label: 'PCB' },
     { id: 'panel-edge', kind: 'panel', origin: pointMm(790, 105), widthMm: mm(55), heightMm: mm(390), label: 'PANEL' }
+  ],
+  bundlePackingPolicy: { efficiency: 0.6 },
+  accessories: [
+    { kind: 'label', id: labelId('LABEL_MOTOR'), routeId: routeId('ROUTE_MOTOR'), stationMm: mm(300), text: 'MOTOR LOOM', catalogPartId: catalogPartId('LABEL_POLY_12'), calloutPosition: pointMm(650, 180) },
+    { kind: 'tapeWrap', id: tapeWrapId('TAPE_MOTOR'), routeId: routeId('ROUTE_MOTOR'), startStationMm: mm(100), endStationMm: mm(360), catalogPartId: catalogPartId('TAPE_PVC_19'), mode: 'halfLap', overlapFraction: 0.5, wasteFactor: 1.15 },
+    { kind: 'sleeve', id: sleeveId('SLEEVE_MOTOR'), routeId: routeId('ROUTE_MOTOR'), startStationMm: mm(40), endStationMm: mm(220), catalogPartId: catalogPartId('SLEEVE_8'), startAllowanceMm: mm(10), endAllowanceMm: mm(10) }
   ],
   exportSettings: { scale: '1:1', includeGrid: true, calibrationLengthMm: mm(100) }
 };

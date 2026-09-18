@@ -16,6 +16,10 @@ export const controllerChassisLocalQuoteData: readonly LocalQuoteEntry[] = [
   each('Tominal Demo Parts', 'DEMO-SEAL-SIG', 0.06, 10),
   each('Tominal Demo Parts', 'DEMO-PLUG', 0.05),
   each('Tominal Demo Parts', 'DEMO-RING-M4', 0.31),
+  each('Tominal Demo Parts', 'DEMO-LABEL-12', 0.08),
+  { manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-TAPE-PVC-19', unit: 'm', currency: 'USD', moq: 1, priceBreaks: [{ minimumQuantity: 1, unitPrice: 0.62 }], leadTimeDays: 2 },
+  { manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-SLEEVE-8', unit: 'm', currency: 'USD', moq: 1, priceBreaks: [{ minimumQuantity: 1, unitPrice: 1.75 }], leadTimeDays: 3 },
+  { manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-HS-5-1P5', unit: 'm', currency: 'USD', moq: 1, priceBreaks: [{ minimumQuantity: 1, unitPrice: 0.95 }], leadTimeDays: 2 },
   { manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-WIRE-1.0', unit: 'm', currency: 'USD', moq: 1, priceBreaks: [{ minimumQuantity: 1, unitPrice: 0.82 }, { minimumQuantity: 10, unitPrice: 0.7 }], leadTimeDays: 2 },
   { manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-WIRE-0.22', unit: 'm', currency: 'USD', moq: 1, priceBreaks: [{ minimumQuantity: 1, unitPrice: 0.42 }, { minimumQuantity: 10, unitPrice: 0.35 }], leadTimeDays: 2 }
 ];

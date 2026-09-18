@@ -54,6 +54,17 @@ export type RingTerminalDefinition = {
   readonly partNumber: string;
   readonly compatibleGauge: GaugeAllowance;
   readonly compatibleStudSizes: readonly string[];
+  readonly insulation?: 'bare' | 'insulated';
+  readonly barrelOuterDiameterMm?: Millimeters;
+  readonly barrelLengthMm?: Millimeters;
+  readonly heatShrinkPolicy?: TerminationAccessoryPolicy;
+};
+
+export type TerminationAccessoryPolicy = {
+  readonly requiresHeatShrink: boolean;
+  readonly heatShrinkCatalogPartId?: CatalogPartId;
+  readonly minWireOverlapMm?: Millimeters;
+  readonly terminalClearanceMm?: Millimeters;
 };
 
 export type WireTypeDefinition = {
@@ -63,7 +74,55 @@ export type WireTypeDefinition = {
   readonly gauge: Gauge;
   readonly insulation: string;
   readonly allowedColors?: readonly string[];
+  readonly insulatedOuterDiameterMm?: Millimeters;
+  readonly outerDiameterProvenance?: 'catalog-exact' | 'catalog-estimated';
 };
+
+export type LabelCatalogDefinition = {
+  readonly kind: 'label';
+  readonly id: CatalogPartId;
+  readonly manufacturer: string;
+  readonly partNumber: string;
+  readonly description: string;
+};
+
+export type TapeCatalogDefinition = {
+  readonly kind: 'tape';
+  readonly id: CatalogPartId;
+  readonly manufacturer: string;
+  readonly partNumber: string;
+  readonly description: string;
+  readonly widthMm: Millimeters;
+  readonly thicknessMm?: Millimeters;
+};
+
+export type SleeveCatalogDefinition = {
+  readonly kind: 'sleeve';
+  readonly id: CatalogPartId;
+  readonly manufacturer: string;
+  readonly partNumber: string;
+  readonly description: string;
+  readonly minBundleDiameterMm?: Millimeters;
+  readonly maxBundleDiameterMm?: Millimeters;
+  readonly nominalInnerDiameterMm?: Millimeters;
+  readonly wallThicknessMm?: Millimeters;
+};
+
+export type HeatShrinkCatalogDefinition = {
+  readonly kind: 'heatShrink';
+  readonly id: CatalogPartId;
+  readonly manufacturer: string;
+  readonly partNumber: string;
+  readonly description: string;
+  readonly suppliedInnerDiameterMm: Millimeters;
+  readonly recoveredInnerDiameterMm: Millimeters;
+};
+
+export type AccessoryCatalogDefinition =
+  | LabelCatalogDefinition
+  | TapeCatalogDefinition
+  | SleeveCatalogDefinition
+  | HeatShrinkCatalogDefinition;
 
 export type StudDefinition = {
   readonly id: StudId;
@@ -99,6 +158,7 @@ export type HarnessCatalogSnapshot = {
   readonly plugs: readonly PlugDefinition[];
   readonly ringTerminals: readonly RingTerminalDefinition[];
   readonly wireTypes: readonly WireTypeDefinition[];
+  readonly accessoryMaterials?: readonly AccessoryCatalogDefinition[];
   readonly studs?: readonly StudDefinition[];
 };
 

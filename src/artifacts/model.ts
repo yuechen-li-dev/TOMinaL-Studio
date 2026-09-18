@@ -26,7 +26,7 @@ export type CutListRow = {
   readonly notes: string;
 };
 
-export type BomCategory = 'connector-housing' | 'terminal' | 'seal' | 'plug' | 'ring-terminal' | 'splice' | 'process' | 'wire';
+export type BomCategory = 'connector-housing' | 'terminal' | 'seal' | 'plug' | 'ring-terminal' | 'splice' | 'process' | 'wire' | 'label' | 'tape' | 'sleeve' | 'heat-shrink';
 
 export type BomRow = {
   readonly id: string;
@@ -37,14 +37,22 @@ export type BomRow = {
   readonly quantity: number;
   readonly unit: ArtifactUnit;
   readonly conductorCount?: number;
+  readonly pieceCount?: number;
   readonly sourceEntities: readonly EntityRef[];
 };
 
 export type ArtifactProjection = {
   readonly cutList: readonly CutListRow[];
   readonly bom: readonly BomRow[];
+  readonly accessorySchedule: readonly AccessoryScheduleRow[];
   readonly diagnostics: readonly Diagnostic[];
 };
+
+export type AccessoryScheduleRow =
+  | { readonly kind: 'label'; readonly accessoryId: string; readonly routeId: string; readonly stationMm: number; readonly text: string; readonly xMm: number; readonly yMm: number; readonly catalogPartId: string; readonly notes: string }
+  | { readonly kind: 'tapeWrap'; readonly accessoryId: string; readonly routeId: string; readonly startStationMm: number; readonly endStationMm: number; readonly spanLengthMm: number; readonly bundleDiameterMinMm: number; readonly bundleDiameterMaxMm: number; readonly tapeWidthMm: number; readonly overlapFraction: number; readonly wasteFactor: number; readonly estimatedTapeLengthMm: number; readonly catalogPartId: string; readonly notes: string }
+  | { readonly kind: 'sleeve'; readonly accessoryId: string; readonly routeId: string; readonly startStationMm: number; readonly endStationMm: number; readonly spanLengthMm: number; readonly cutLengthMm: number; readonly maxBundleDiameterMm: number; readonly requiredInnerDiameterMm: number; readonly catalogPartId: string; readonly notes: string }
+  | { readonly kind: 'heatShrink'; readonly accessoryId: string; readonly terminationId: string; readonly conductorId: string; readonly pieceQuantity: 1; readonly wireOuterDiameterMm: number; readonly substrateMaxDiameterMm: number; readonly suppliedInnerDiameterMm: number; readonly recoveredInnerDiameterMm: number; readonly cutLengthMm: number; readonly catalogPartId: string; readonly notes: string };
 
 export type QuoteRequest = {
   readonly bomRowId: string;

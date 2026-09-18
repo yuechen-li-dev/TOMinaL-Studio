@@ -51,6 +51,40 @@ body {
   box-shadow: 0 0 0 2px rgb(34 211 238 / 25%);
 }
 
+.logical-flow .react-flow__controls-button {
+  border-color: #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.logical-flow .react-flow__controls-button:hover {
+  background: #1e293b;
+  color: #67e8f9;
+}
+
+.logical-flow .react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.catalog-workspace {
+  --background: 222.2 47.4% 8%;
+  --foreground: 210 40% 96%;
+  --card: 222.2 38% 12%;
+  --card-foreground: 210 40% 96%;
+  --primary: 188 86% 53%;
+  --primary-foreground: 222.2 47.4% 8%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 22%;
+  --accent-foreground: 210 40% 96%;
+  --border: 215 27.9% 22%;
+  --input: 215 27.9% 22%;
+  --ring: 188 86% 53%;
+  color-scheme: dark;
+}
+
 .catalog-workspace section {
   border-radius: 2px !important;
   box-shadow: none !important;

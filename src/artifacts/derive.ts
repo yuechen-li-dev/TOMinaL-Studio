@@ -1,6 +1,6 @@
-import { getConductorRouteLength, type TominalProject } from '@/formboard';
+import { accessoryPosition, deriveHeatShrinkPlacements, estimateTapeWrap, getConductorRouteLength, validateSleeveFit, type TominalProject } from '@/formboard';
 import { sortDiagnostics, type Diagnostic, type EntityRef, type Gauge, type HarnessCatalogSnapshot, type Termination } from '@/harness-core';
-import type { ArtifactProjection, BomCategory, BomRow, CutListRow } from './model';
+import type { AccessoryScheduleRow, ArtifactProjection, BomCategory, BomRow, CutListRow } from './model';
 import { naturalCompare, round } from './stable';
 
 const ref = (kind: EntityRef['kind'], id: string): EntityRef => ({ kind, id });
@@ -57,7 +57,7 @@ export function deriveCutList(project: TominalProject): { rows: CutListRow[]; di
   return { rows, diagnostics };
 }
 
-type Atomic = { category: BomCategory; manufacturer: string; partNumber: string; description: string; quantity: number; unit: 'ea' | 'm'; source: EntityRef; conductor?: string };
+type Atomic = { category: BomCategory; manufacturer: string; partNumber: string; description: string; quantity: number; unit: 'ea' | 'm'; source: EntityRef; conductor?: string; pieceCount?: number };
 
 function catalogPart(catalog: HarnessCatalogSnapshot, id: string): { manufacturer: string; partNumber: string; description: string } | undefined {
   const candidates = [...catalog.terminals, ...catalog.seals, ...catalog.plugs, ...catalog.ringTerminals];
@@ -95,6 +95,27 @@ export function deriveBom(project: TominalProject, cutList: readonly CutListRow[
     const wire = conductor && project.harness.catalog.wireTypes.find((item) => item.id === conductor.wireTypeId);
     if (wire) atomic.push({ category: 'wire', manufacturer: wire.manufacturer, partNumber: wire.partNumber, description: `${wire.insulation}, ${gaugeText(wire.gauge)}, ${row.color}`, quantity: row.cutLengthMm / 1000, unit: 'm', source: ref('conductor', row.wireId), conductor: row.wireId });
   }
+  const accessoryById = new Map((project.harness.catalog.accessoryMaterials ?? []).map((item) => [item.id, item]));
+  for (const accessory of project.formboard.accessories ?? []) {
+    const material = accessory.catalogPartId && accessoryById.get(accessory.catalogPartId);
+    if (!material) continue;
+    if (accessory.kind === 'label') atomic.push({ category: 'label', manufacturer: material.manufacturer, partNumber: material.partNumber, description: material.description, quantity: 1, unit: 'ea', source: ref('label', accessory.id) });
+    else if (accessory.kind === 'tapeWrap') {
+      const result = estimateTapeWrap(project, accessory);
+      diagnostics.push(...result.diagnostics);
+      if (result.estimate) atomic.push({ category: 'tape', manufacturer: material.manufacturer, partNumber: material.partNumber, description: material.description, quantity: result.estimate.estimatedTapeLengthMm / 1000, unit: 'm', source: ref('tapeWrap', accessory.id) });
+    } else {
+      const result = validateSleeveFit(project, accessory);
+      diagnostics.push(...result.diagnostics);
+      if (result.qualification.valid) atomic.push({ category: 'sleeve', manufacturer: material.manufacturer, partNumber: material.partNumber, description: material.description, quantity: result.qualification.cutLengthMm / 1000, unit: 'm', source: ref('sleeve', accessory.id) });
+    }
+  }
+  const heatShrink = deriveHeatShrinkPlacements(project);
+  diagnostics.push(...heatShrink.diagnostics);
+  for (const placement of heatShrink.placements.filter((item) => item.valid)) {
+    const material = accessoryById.get(placement.catalogPartId);
+    if (material) atomic.push({ category: 'heat-shrink', manufacturer: material.manufacturer, partNumber: material.partNumber, description: material.description, quantity: Number(placement.cutLengthMm) / 1000, unit: 'm', source: ref('heatShrinkPlacement', placement.id), pieceCount: 1 });
+  }
   const groups = new Map<string, Atomic[]>();
   for (const item of atomic) {
     const key = [item.category, item.manufacturer, item.partNumber, item.unit, item.category === 'wire' ? item.description : ''].join('|');
@@ -104,13 +125,41 @@ export function deriveBom(project: TominalProject, cutList: readonly CutListRow[
     id, category: items[0].category, manufacturer: items[0].manufacturer, partNumber: items[0].partNumber,
     description: items[0].description, quantity: round(items.reduce((sum, item) => sum + item.quantity, 0)), unit: items[0].unit,
     conductorCount: items[0].category === 'wire' ? new Set(items.map((item) => item.conductor)).size : undefined,
+    pieceCount: items.some((item) => item.pieceCount !== undefined) ? items.reduce((sum, item) => sum + (item.pieceCount ?? 0), 0) : undefined,
     sourceEntities: items.map((item) => item.source).sort((a, b) => naturalCompare(`${a.kind}:${a.id}`, `${b.kind}:${b.id}`))
   }));
+  return { rows, diagnostics };
+}
+
+export function deriveAccessorySchedule(project: TominalProject): { rows: AccessoryScheduleRow[]; diagnostics: Diagnostic[] } {
+  const rows: AccessoryScheduleRow[] = [];
+  const diagnostics: Diagnostic[] = [];
+  const catalog = new Map((project.harness.catalog.accessoryMaterials ?? []).map((item) => [item.id, item]));
+  for (const accessory of [...(project.formboard.accessories ?? [])].sort((a, b) => naturalCompare(a.id, b.id))) {
+    if (accessory.kind === 'label') {
+      const position = accessoryPosition(project.formboard, accessory);
+      if (!position) continue;
+      rows.push({ kind: 'label', accessoryId: accessory.id, routeId: accessory.routeId, stationMm: Number(accessory.stationMm), text: accessory.text, xMm: Number(position.x), yMm: Number(position.y), catalogPartId: accessory.catalogPartId ?? '', notes: accessory.notes ?? '' });
+    } else if (accessory.kind === 'tapeWrap') {
+      const result = estimateTapeWrap(project, accessory);
+      diagnostics.push(...result.diagnostics);
+      const material = catalog.get(accessory.catalogPartId);
+      if (result.estimate && material?.kind === 'tape') rows.push({ kind: 'tapeWrap', accessoryId: accessory.id, routeId: accessory.routeId, startStationMm: Number(accessory.startStationMm), endStationMm: Number(accessory.endStationMm), ...result.estimate, tapeWidthMm: Number(material.widthMm), overlapFraction: accessory.overlapFraction, wasteFactor: accessory.wasteFactor, catalogPartId: accessory.catalogPartId, notes: accessory.notes ?? '' });
+    } else {
+      const result = validateSleeveFit(project, accessory);
+      diagnostics.push(...result.diagnostics);
+      if (result.qualification.maxBundleDiameterMm !== undefined && result.qualification.requiredInnerDiameterMm !== undefined) rows.push({ kind: 'sleeve', accessoryId: accessory.id, routeId: accessory.routeId, startStationMm: Number(accessory.startStationMm), endStationMm: Number(accessory.endStationMm), spanLengthMm: result.qualification.spanLengthMm, cutLengthMm: result.qualification.cutLengthMm, maxBundleDiameterMm: result.qualification.maxBundleDiameterMm, requiredInnerDiameterMm: result.qualification.requiredInnerDiameterMm, catalogPartId: accessory.catalogPartId, notes: accessory.notes ?? '' });
+    }
+  }
+  const heatShrink = deriveHeatShrinkPlacements(project);
+  diagnostics.push(...heatShrink.diagnostics);
+  rows.push(...heatShrink.placements.map((item) => ({ kind: 'heatShrink' as const, accessoryId: item.id, terminationId: item.terminationId, conductorId: item.conductorId, pieceQuantity: 1 as const, wireOuterDiameterMm: Number(item.wireOuterDiameterMm), substrateMaxDiameterMm: Number(item.substrateMaxDiameterMm), suppliedInnerDiameterMm: Number(item.suppliedInnerDiameterMm), recoveredInnerDiameterMm: Number(item.recoveredInnerDiameterMm), cutLengthMm: Number(item.cutLengthMm), catalogPartId: item.catalogPartId, notes: item.valid ? 'Fit validated.' : 'INVALID FIT' })));
   return { rows, diagnostics };
 }
 
 export function deriveManufacturingArtifacts(project: TominalProject): ArtifactProjection {
   const cut = deriveCutList(project);
   const bom = deriveBom(project, cut.rows);
-  return { cutList: cut.rows, bom: bom.rows, diagnostics: sortDiagnostics([...cut.diagnostics, ...bom.diagnostics]) };
+  const accessories = deriveAccessorySchedule(project);
+  return { cutList: cut.rows, bom: bom.rows, accessorySchedule: accessories.rows, diagnostics: sortDiagnostics([...cut.diagnostics, ...bom.diagnostics, ...accessories.diagnostics]) };
 }

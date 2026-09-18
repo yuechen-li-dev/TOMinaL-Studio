@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import type { AppCommandDispatcher, Selection, WorkspaceId } from '@/app/session/appSession';
 import { singleSelection } from '@/app/session/appSession';
-import { getRouteLength, routeRelatedConductors, type TominalProject } from '@/formboard';
+import { deriveBundleSections, deriveHeatShrinkPlacements, estimateTapeWrap, getRouteLength, routeRelatedConductors, validateSleeveFit, type TominalProject } from '@/formboard';
 import { connectorOccurrenceId, planConnectorRemoval, type Diagnostic } from '@/harness-core';
 
 export function WorkspaceInspector({ project, selection, diagnostics, dispatch, workspace }: {
@@ -20,6 +20,11 @@ export function WorkspaceInspector({ project, selection, diagnostics, dispatch, 
   const route = entity?.kind === 'route' ? project.harness.routes.find((item) => item.id === entity.id) : conductor?.routeId ? project.harness.routes.find((item) => item.id === conductor.routeId) : undefined;
   const routeLength = route ? getRouteLength(project.formboard, route.id) : undefined;
   const relatedConductors = route ? routeRelatedConductors(project.harness, route.id) : [];
+  const accessory = project.formboard.accessories?.find((item) => item.id === entity?.id);
+  const tape = accessory?.kind === 'tapeWrap' ? estimateTapeWrap(project, accessory) : undefined;
+  const sleeve = accessory?.kind === 'sleeve' ? validateSleeveFit(project, accessory) : undefined;
+  const heatShrink = entity?.kind === 'heatShrinkPlacement' ? deriveHeatShrinkPlacements(project).placements.find((item) => item.id === entity.id) : undefined;
+  const routeBundle = route ? deriveBundleSections(project.harness, project.formboard, route.id) : undefined;
 
   const navigateDiagnostic = (diagnostic: Diagnostic) => {
     dispatch({ type: 'selection.set', selection: singleSelection(diagnostic.entity) });
@@ -48,6 +53,11 @@ export function WorkspaceInspector({ project, selection, diagnostics, dispatch, 
         </section> : null}
         {connector ? <section className="space-y-3"><Property label="Role" value={connector.role} /><Property label="Family" value={connector.familyId} /><Property label="Cavities" value={String(connector.cavityPopulations.length)} /><button type="button" className="border border-amber-800 px-2 py-1.5 text-xs text-amber-300 hover:bg-amber-950" onClick={() => setShowRemovalPlan((current) => !current)}>Review delete impact</button>{showRemovalPlan ? <RemovalPlan project={project} connectorId={connector.id} /> : null}</section> : null}
         {route ? <section className="mt-3 space-y-3"><Property label="Segments" value={String(route.segmentIds.length)} /><Property label="Length" value={routeLength?.status === 'resolved' ? `${Number(routeLength.valueMm).toFixed(1)} mm` : 'Unresolved'} /><Property label="Conductors" value={relatedConductors.join(', ') || 'None'} /></section> : null}
+        {routeBundle ? <section className="mt-3 space-y-3"><Property label="Bundle sections" value={String(routeBundle.sections.length)} /><Property label="Core OD range" value={`${Math.min(...routeBundle.sections.map((item) => Number(item.coreDiameterMm ?? Infinity))).toFixed(3)}–${Math.max(...routeBundle.sections.map((item) => Number(item.coreDiameterMm ?? 0))).toFixed(3)} mm estimated`} /><Property label="Packing efficiency" value={String(routeBundle.sections[0]?.packingEfficiency ?? '—')} /></section> : null}
+        {accessory?.kind === 'label' ? <section className="mt-3 space-y-3"><label className="block text-[11px] text-slate-500">Text<input aria-label="Label text" className="mt-1 w-full border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-200" value={accessory.text} onChange={(event) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { text: event.target.value } })} /></label><Property label="Route" value={accessory.routeId} /><NumberEditor label="Station (mm)" value={Number(accessory.stationMm)} onChange={(value) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { stationMm: value as typeof accessory.stationMm } })} /></section> : null}
+        {accessory?.kind === 'tapeWrap' ? <section className="mt-3 space-y-3"><NumberEditor label="Start station (mm)" value={Number(accessory.startStationMm)} onChange={(value) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { startStationMm: value as typeof accessory.startStationMm } })} /><NumberEditor label="End station (mm)" value={Number(accessory.endStationMm)} onChange={(value) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { endStationMm: value as typeof accessory.endStationMm } })} /><NumberEditor label="Overlap fraction" value={accessory.overlapFraction} step={0.05} onChange={(value) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { overlapFraction: value } })} /><NumberEditor label="Waste factor" value={accessory.wasteFactor} step={0.05} onChange={(value) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { wasteFactor: value } })} /><Property label="Mode" value={accessory.mode} /><Property label="Bundle OD range" value={tape?.estimate ? `${tape.estimate.bundleDiameterMinMm.toFixed(3)}–${tape.estimate.bundleDiameterMaxMm.toFixed(3)} mm` : 'Unresolved'} /><Property label="Estimated tape" value={tape?.estimate ? `${tape.estimate.estimatedTapeLengthMm.toFixed(3)} mm` : 'Unresolved'} /></section> : null}
+        {accessory?.kind === 'sleeve' ? <section className="mt-3 space-y-3"><NumberEditor label="Start station (mm)" value={Number(accessory.startStationMm)} onChange={(value) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { startStationMm: value as typeof accessory.startStationMm } })} /><NumberEditor label="End station (mm)" value={Number(accessory.endStationMm)} onChange={(value) => dispatch({ type: 'formboard.updateAccessory', id: accessory.id, patch: { endStationMm: value as typeof accessory.endStationMm } })} /><Property label="Cut length" value={`${sleeve?.qualification.cutLengthMm.toFixed(3) ?? '—'} mm`} /><Property label="Max bundle OD" value={`${sleeve?.qualification.maxBundleDiameterMm?.toFixed(3) ?? '—'} mm`} /><Property label="Fit" value={sleeve?.qualification.valid ? 'Validated' : 'Invalid'} /></section> : null}
+        {heatShrink ? <section className="mt-3 space-y-3"><Property label="Termination" value={heatShrink.terminationId} /><Property label="Substrate OD" value={`${Number(heatShrink.substrateMaxDiameterMm)} mm`} /><Property label="Tubing range" value={`${Number(heatShrink.suppliedInnerDiameterMm)} → ${Number(heatShrink.recoveredInnerDiameterMm)} mm`} /><Property label="Cut length" value={`${Number(heatShrink.cutLengthMm)} mm`} /></section> : null}
         {!entity ? <p className="text-xs leading-5 text-slate-500">Selection is shared by Logical and Formboard. Choose a conductor or connector to inspect the same semantic entity across views.</p> : null}
         <section className="mt-6 border-t border-slate-800 pt-3">
           <div className="mb-2 flex items-center justify-between"><h2 className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Diagnostics</h2><span className={`text-xs font-semibold ${diagnostics.length ? 'text-amber-400' : 'text-emerald-400'}`}>{diagnostics.length}</span></div>
@@ -65,4 +75,8 @@ function RemovalPlan({ project, connectorId }: { project: TominalProject; connec
 
 function Property({ label, value }: { label: string; value: string }) {
   return <div><div className="text-[10px] uppercase tracking-wide text-slate-600">{label}</div><div className="mt-0.5 break-words font-mono text-xs text-slate-300">{value}</div></div>;
+}
+
+function NumberEditor({ label, value, step = 1, onChange }: { label: string; value: number; step?: number; onChange: (value: number) => void }) {
+  return <label className="block text-[11px] text-slate-500">{label}<input aria-label={label} className="mt-1 w-full border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-200" type="number" step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 }

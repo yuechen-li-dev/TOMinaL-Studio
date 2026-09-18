@@ -9,3 +9,4 @@ export * from './svgExport';
 export * from './graphLayout';
 export * from './legacyMigration';
 export * from './machinaAdapter';
+export * from './accessories';

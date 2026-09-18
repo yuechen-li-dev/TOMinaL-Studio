@@ -21,12 +21,12 @@ check((await page.locator('[data-entity-id="SEG_MOTOR_OUT"]').getAttribute('stro
 await page.screenshot({ path: path.join(output, 'selected-conductor-formboard.png'), fullPage: true });
 
 await page.getByRole('button', { name: 'BOM', exact: true }).click();
-check(await page.getByText('19 grouped manufacturer-part rows · required quantity only').count(), 'BOM row count label missing.');
+check(await page.getByText('23 grouped manufacturer-part rows · required quantity only').count(), 'BOM row count label missing.');
 await page.screenshot({ path: path.join(output, 'bom.png'), fullPage: true });
 
 await page.getByRole('button', { name: 'Quote', exact: true }).click();
 check(await page.getByText(/Demo Estimate \/ Local Fixture Pricing/).count(), 'Demo quote label missing.');
-check(await page.getByText(/Subtotal\s+USD 31.65/).count(), 'Quote subtotal missing.');
+check(await page.getByText(/Subtotal\s+USD 35.05/).count(), 'Quote subtotal missing.');
 await page.screenshot({ path: path.join(output, 'quote.png'), fullPage: true });
 await page.getByRole('button', { name: 'Refresh snapshot' }).click();
 check(await page.getByText(/2026-09-15T12:00:01.000Z/).count(), 'Quote refresh did not replace the snapshot time.');

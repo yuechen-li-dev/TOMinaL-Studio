@@ -1,5 +1,44 @@
 # Formboard usage
 
+## Bundle geometry and accessories
+
+`HarnessIr` conductor route bindings and `FormboardDocument` route geometry jointly derive bundle state. `deriveBundleSections(harness, formboard, routeId)` returns deterministic route-station intervals with conductor IDs, core area, estimated core OD, ordered applied layers, and estimated finished OD. It is a projection: serialize accessory intent, never the derived sections.
+
+For two or more conductors, TOMinaL uses the equivalent-round planning estimate `D = 2 × sqrt((Σ(π × OD² / 4) / packingEfficiency) / π)`. The default packing efficiency is `0.60`; a single conductor retains its catalog insulated OD. Missing OD fails closed. Catalog-estimated OD is permitted only with explicit provenance and a diagnostic.
+
+Labels bind to one route station. Tape and sleeves bind to route-station spans. Label callout position is presentation-only; route and station remain semantic authority. Tape consumption is a piecewise helical estimate across every intersected bundle section, including overlap and waste. Sleeve fit uses the maximum prior-layer bundle OD across its span. Bare-ring heat shrink is derived from explicit terminal policy and qualified against tubing supplied/recovered IDs.
+
+Bundle OD and tape consumption are engineering estimates for planning, not exact conductor packing or process simulation. All canonical lengths are millimetres. The Formboard inspector exposes station/span values and allows numeric edits; the `+ Label`, `+ Tape`, and `+ Sleeve` controls create bounded intent on the selected route.
+
+The same intent is available through the public typed API:
+
+```ts
+import { catalogPartId, mm, routeId, tapeWrapId } from '@/harness-core';
+import { estimateTapeWrap } from '@/formboard';
+
+const tape = {
+  kind: 'tapeWrap' as const,
+  id: tapeWrapId('TAPE_MOTOR'),
+  routeId: routeId('ROUTE_MOTOR'),
+  startStationMm: mm(100),
+  endStationMm: mm(360),
+  catalogPartId: catalogPartId('TAPE_PVC_19'),
+  mode: 'halfLap' as const,
+  overlapFraction: 0.5,
+  wasteFactor: 1.15
+};
+
+const withTape = {
+  ...project,
+  formboard: {
+    ...project.formboard,
+    accessories: [...(project.formboard.accessories ?? []).filter((item) => item.id !== tape.id), tape]
+  }
+};
+
+const estimate = estimateTapeWrap(withTape, tape);
+```
+
 1. Open TOMinaL Studio and choose **Formboard**.
 2. Use `+`, `-`, and the target control to zoom or fit the 900 x 600 mm board. Press `F` to fit the active Formboard when focus is not in an editable control. Drag empty board space to pan. The lower-left readout is in millimetres.
 3. Drag a connector, electrical splice, or purple physical branch marker. Attached route endpoints and derived lengths update immediately.

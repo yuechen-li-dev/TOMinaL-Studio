@@ -4,6 +4,7 @@ import {
   catalogPartId,
   crossSection,
   gaugeAllowance,
+  mm,
   studId,
   wireTypeId,
   withCatalogHash
@@ -51,7 +52,16 @@ export const controllerChassisCatalog = withCatalogHash({
       manufacturer: 'Tominal Demo Parts',
       partNumber: 'DEMO-RING-M4',
       compatibleGauge: gaugeAllowance(0.75, 1.5),
-      compatibleStudSizes: ['M4']
+      compatibleStudSizes: ['M4'],
+      insulation: 'bare',
+      barrelOuterDiameterMm: mm(3.8),
+      barrelLengthMm: mm(8),
+      heatShrinkPolicy: {
+        requiresHeatShrink: true,
+        heatShrinkCatalogPartId: catalogPartId('HEATSHRINK_5_1P5'),
+        minWireOverlapMm: mm(6),
+        terminalClearanceMm: mm(1)
+      }
     }
   ],
   wireTypes: [
@@ -61,6 +71,8 @@ export const controllerChassisCatalog = withCatalogHash({
       partNumber: 'DEMO-WIRE-1.0',
       gauge: crossSection(1),
       insulation: 'PVC demo',
+      insulatedOuterDiameterMm: mm(2.4),
+      outerDiameterProvenance: 'catalog-exact',
       allowedColors: ['RD', 'BK', 'GN']
     },
     {
@@ -69,9 +81,16 @@ export const controllerChassisCatalog = withCatalogHash({
       partNumber: 'DEMO-WIRE-0.22',
       gauge: crossSection(0.22),
       insulation: 'PVC demo',
+      insulatedOuterDiameterMm: mm(1.3),
+      outerDiameterProvenance: 'catalog-exact',
       allowedColors: ['WH', 'BU', 'YE', 'VT', 'GY']
     }
   ],
+  accessoryMaterials: [
+    { kind: 'label', id: catalogPartId('LABEL_POLY_12'), manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-LABEL-12', description: '12 mm polyester harness label' },
+    { kind: 'tape', id: catalogPartId('TAPE_PVC_19'), manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-TAPE-PVC-19', description: '19 mm PVC harness tape', widthMm: mm(19), thicknessMm: mm(0.13) },
+    { kind: 'sleeve', id: catalogPartId('SLEEVE_8'), manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-SLEEVE-8', description: '8 mm nominal braided sleeve', minBundleDiameterMm: mm(3), maxBundleDiameterMm: mm(7), nominalInnerDiameterMm: mm(8), wallThicknessMm: mm(0.4) },
+    { kind: 'heatShrink', id: catalogPartId('HEATSHRINK_5_1P5'), manufacturer: 'Tominal Demo Parts', partNumber: 'DEMO-HS-5-1P5', description: '5 mm supplied / 1.5 mm recovered heat-shrink tubing', suppliedInnerDiameterMm: mm(5), recoveredInnerDiameterMm: mm(1.5) }
+  ],
   studs: [{ id: studId('CHASSIS_STUD'), label: 'Chassis ground stud', size: 'M4' }]
 });
-

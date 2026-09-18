@@ -125,7 +125,7 @@ describe('engineering shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Manufacturing' }));
     expect(await screen.findByText('tominal.lock.toml')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Export All Artifacts' }));
-    expect(click).toHaveBeenCalledTimes(8);
+    expect(click).toHaveBeenCalledTimes(10);
     createObjectUrl.mockRestore(); revokeObjectUrl.mockRestore(); click.mockRestore();
   });
 });

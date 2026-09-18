@@ -9,6 +9,7 @@ TOMinaL Studio has a thin Tauri 2 Windows shell around the unchanged browser app
 - **Open Project** uses a native file dialog, reads one UTF-8 `.json` file through a bounded Rust command, parses its versioned envelope, and validates HarnessIr plus FormboardDocument before replacing application state.
 - **Save Project** uses a native save dialog and writes a deterministic `<project-id>.tominal.json` envelope containing `formatVersion`, `project`, and `quoteRevision`.
 - **Export Artifact Folder** uses a native directory dialog and writes the existing release-ready artifact package into `<selected-directory>/<project-id>-artifacts/`. Artifact names must be single safe path components; package count and total byte size are bounded.
+- Each artifact's **Export** action uses its own native save dialog in the desktop shell and writes the selected file through the same bounded Rust command.
 
 The browser build retains the same buttons. Open uses an ordinary file input, Save downloads the project JSON, and Export All retains browser downloads. No Tauri API is invoked outside the native runtime.
 
@@ -31,7 +32,7 @@ No engineering rules, artifact calculations, quote logic, or UI architecture wer
 
 ## Validation record
 
-- `npm test`: 17 files and 96 tests passed, including deterministic project-file round trip, invalid-file rejection, and browser open/save fallback wiring.
+- `npm test`: 18 files and 98 tests passed, including deterministic project-file round trip, invalid-file rejection, browser open/save fallback wiring, and native individual-artifact save/cancel behavior.
 - `npm run build`: TypeScript and the browser-only Vite production build passed.
 - `npm run desktop:test`: Rust tests passed, including bounded project and artifact-folder filesystem writes.
 - `npm run desktop:build`: release compilation and NSIS bundling passed.
@@ -39,4 +40,8 @@ No engineering rules, artifact calculations, quote logic, or UI architecture wer
 - `npm run artifacts:qualify-ui`: browser qualification completed with no failures.
 - `git diff --check`: passed.
 
-The generated installer is `TOMinaL Studio_0.1.0_x64-setup.exe` (2,149,761 bytes), with SHA-256 `723EFE819B61AF721990D3380DFC21E96628FEE1535740A5BC51EAE19E4258B1`. It is an unsigned development build, so Windows may show a SmartScreen warning until release signing is configured.
+The generated installer is `TOMinaL Studio_0.1.0_x64-setup.exe` (2,150,027 bytes), with SHA-256 `A2B12E7F6752BF6004141E5D2AD1AA8C2A4B4BFC673CA12B66642A6B0B470062`. It is an unsigned development build, so Windows may show a SmartScreen warning until release signing is configured.
+
+## Interaction follow-up
+
+Logical node positions now update for every React Flow drag change instead of only on drag-stop. The dark canvas supplies explicit high-contrast zoom-control colors, and the catalog workspace scopes the existing component tokens to the Studio dark palette.

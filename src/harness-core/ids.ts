@@ -16,6 +16,10 @@ export type CatalogPartId = Brand<string, 'CatalogPartId'>;
 export type WireTypeId = Brand<string, 'WireTypeId'>;
 export type SignalRoleId = Brand<string, 'SignalRoleId'>;
 export type StudId = Brand<string, 'StudId'>;
+export type LabelId = Brand<string, 'LabelId'>;
+export type TapeWrapId = Brand<string, 'TapeWrapId'>;
+export type SleeveId = Brand<string, 'SleeveId'>;
+export type HeatShrinkPlacementId = Brand<string, 'HeatShrinkPlacementId'>;
 export type Millimeters = Brand<number, 'Millimeters'>;
 export type SquareMillimeters = Brand<number, 'SquareMillimeters'>;
 
@@ -38,6 +42,9 @@ export const catalogPartId = (value: string): CatalogPartId => id<'CatalogPartId
 export const wireTypeId = (value: string): WireTypeId => id<'WireTypeId'>(value);
 export const signalRoleId = (value: string): SignalRoleId => id<'SignalRoleId'>(value);
 export const studId = (value: string): StudId => id<'StudId'>(value);
+export const labelId = (value: string): LabelId => id<'LabelId'>(value);
+export const tapeWrapId = (value: string): TapeWrapId => id<'TapeWrapId'>(value);
+export const sleeveId = (value: string): SleeveId => id<'SleeveId'>(value);
+export const heatShrinkPlacementId = (value: string): HeatShrinkPlacementId => id<'HeatShrinkPlacementId'>(value);
 export const mm = (value: number): Millimeters => value as Millimeters;
 export const mm2 = (value: number): SquareMillimeters => value as SquareMillimeters;
-

@@ -1,5 +1,11 @@
 # Manufacturing artifact API
 
+## Accessory material schedule
+
+`deriveManufacturingArtifacts` keeps the conductor cut list separate from `accessorySchedule`. The schedule contains typed label, tape-wrap, sleeve, and policy-derived heat-shrink rows. `*.accessories.csv` is the compact manufacturing schedule; `*.accessories.json` preserves the full typed fields and identifies bundle diameter and tape consumption as estimates.
+
+Accessory BOM rows aggregate exact unrounded internal millimetre demand by catalog part and convert linear materials to metres only at the BOM boundary. Labels use `ea`; tape, sleeve, and heat-shrink use `m`. Quote providers receive these ordinary BOM rows, so local or future providers apply MOQ/package rounding without changing engineering demand.
+
 TOMinaL derives manufacturing outputs from engineering authority; artifact rows are never editable source state.
 
 ```text

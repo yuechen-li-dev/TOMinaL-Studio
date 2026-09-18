@@ -92,6 +92,12 @@ function App() {
           }).document;
         });
         return;
+      case 'formboard.updateAccessory':
+        setFormboard((current) => ({
+          ...current,
+          accessories: (current.accessories ?? []).map((accessory) => accessory.id === command.id ? { ...accessory, ...command.patch, id: accessory.id, kind: accessory.kind } as typeof accessory : accessory)
+        }));
+        return;
       case 'harness.updateConductor':
         setHarness((current) => ({
           ...current,

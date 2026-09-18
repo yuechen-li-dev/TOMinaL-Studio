@@ -137,7 +137,13 @@ export function addAnnotation(document: FormboardDocument, annotation: Formboard
 }
 
 export function routeRelatedConductors(harness: import('@/harness-core').HarnessIr, routeId: RouteId) {
-  return harness.conductors.filter((conductor) => conductor.routeId === routeId).map((conductor) => conductor.id);
+  const route = harness.routes.find((item) => item.id === routeId);
+  const segments = new Set(route?.segmentIds ?? []);
+  return harness.conductors.filter((conductor) => {
+    if (!conductor.routeId) return false;
+    const bound = harness.routes.find((item) => item.id === conductor.routeId);
+    return bound?.segmentIds.some((segmentId) => segments.has(segmentId)) ?? false;
+  }).map((conductor) => conductor.id);
 }
 
 export function moveSplice(
@@ -153,4 +159,3 @@ export function moveSplice(
     segmentGeometry: document.segmentGeometry.map((segment) => moveEndpointPoints(segment, 'splice', id, position))
   });
 }
-

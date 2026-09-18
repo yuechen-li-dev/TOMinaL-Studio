@@ -24,6 +24,20 @@ export async function exportNativeArtifactFolder(projectId: string, artifacts: r
   return invoke<string>('write_artifact_folder', { directory, projectId, artifacts: artifacts.map(({ file, content }) => ({ file, content })) });
 }
 
+export async function exportNativeArtifactFile(artifact: GeneratedArtifact): Promise<string | undefined> {
+  const [{ save }, { invoke }] = await Promise.all([import('@tauri-apps/plugin-dialog'), import('@tauri-apps/api/core')]);
+  const fileParts = artifact.file.split('.');
+  const extension = fileParts.length > 1 ? fileParts[fileParts.length - 1] : undefined;
+  const path = await save({
+    title: `Export ${artifact.file}`,
+    defaultPath: artifact.file,
+    filters: extension ? [{ name: 'Artifact', extensions: [extension] }] : undefined
+  });
+  if (!path) return undefined;
+  await invoke('write_text_file', { path, contents: artifact.content });
+  return path;
+}
+
 export function downloadTextFile(file: string, contents: string, mimeType = 'application/json;charset=utf-8'): void {
   const url = URL.createObjectURL(new Blob([contents], { type: mimeType }));
   const link = document.createElement('a');

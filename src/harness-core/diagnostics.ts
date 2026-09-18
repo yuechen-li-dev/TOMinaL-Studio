@@ -13,6 +13,10 @@ export type EntityRef = {
     | 'routeJunction'
     | 'route'
     | 'routeSegment'
+    | 'label'
+    | 'tapeWrap'
+    | 'sleeve'
+    | 'heatShrinkPlacement'
     | 'catalogPart'
     | 'migration';
   readonly id: string;
@@ -39,4 +43,3 @@ export function sortDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[
       .localeCompare([right.severity, right.rule, right.entity.kind, right.entity.id, right.id].join('|'))
   );
 }
-

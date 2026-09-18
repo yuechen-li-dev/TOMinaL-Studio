@@ -79,7 +79,7 @@ describe('TOMINAL-ARTIFACTS-X1', () => {
     expect(second.artifacts).toEqual(first.artifacts);
     const lock = first.artifacts.find((item) => item.file === 'tominal.lock.toml')?.content ?? '';
     expect(lock).toContain('harness_ir_schema_version = "1.0"');
-    expect(lock).toContain('formboard_document_schema_version = "1"');
+    expect(lock).toContain('formboard_document_schema_version = "2"');
     expect(lock).toContain('quote_snapshot_identity');
     expect(lock).not.toMatch(/[A-Z]:\\/i);
     for (const item of first.artifacts) expect(item.sha256).toBe(sha256(item.content));

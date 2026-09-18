@@ -31,6 +31,18 @@ const population = z.discriminatedUnion('kind', [
     signalRole: id.optional()
   })
 ]);
+const terminationAccessoryPolicy = z.object({
+  requiresHeatShrink: z.boolean(),
+  heatShrinkCatalogPartId: id.optional(),
+  minWireOverlapMm: finite.nonnegative().optional(),
+  terminalClearanceMm: finite.nonnegative().optional()
+});
+const accessoryMaterial = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('label'), id, manufacturer: id, partNumber: id, description: id }),
+  z.object({ kind: z.literal('tape'), id, manufacturer: id, partNumber: id, description: id, widthMm: finite.positive(), thicknessMm: finite.positive().optional() }),
+  z.object({ kind: z.literal('sleeve'), id, manufacturer: id, partNumber: id, description: id, minBundleDiameterMm: finite.positive().optional(), maxBundleDiameterMm: finite.positive().optional(), nominalInnerDiameterMm: finite.positive().optional(), wallThicknessMm: finite.positive().optional() }),
+  z.object({ kind: z.literal('heatShrink'), id, manufacturer: id, partNumber: id, description: id, suppliedInnerDiameterMm: finite.positive(), recoveredInnerDiameterMm: finite.positive() })
+]);
 
 export const harnessCatalogSnapshotSchema = z.object({
     snapshotId: id,
@@ -72,7 +84,11 @@ export const harnessCatalogSnapshotSchema = z.object({
         manufacturer: id,
         partNumber: id,
         compatibleGauge: allowance,
-        compatibleStudSizes: z.array(id)
+        compatibleStudSizes: z.array(id),
+        insulation: z.enum(['bare', 'insulated']).optional(),
+        barrelOuterDiameterMm: finite.positive().optional(),
+        barrelLengthMm: finite.positive().optional(),
+        heatShrinkPolicy: terminationAccessoryPolicy.optional()
       })
     ),
     wireTypes: z.array(
@@ -82,9 +98,12 @@ export const harnessCatalogSnapshotSchema = z.object({
         partNumber: id,
         gauge,
         insulation: id,
-        allowedColors: z.array(id).optional()
+        allowedColors: z.array(id).optional(),
+        insulatedOuterDiameterMm: finite.positive().optional(),
+        outerDiameterProvenance: z.enum(['catalog-exact', 'catalog-estimated']).optional()
       })
     ),
+    accessoryMaterials: z.array(accessoryMaterial).optional(),
     studs: z.array(z.object({ id, label: id, size: id })).optional()
 });
 
@@ -185,6 +204,7 @@ function orderedIr(ir: HarnessIr): HarnessIr {
       plugs: byId(ir.catalog.plugs),
       ringTerminals: byId(ir.catalog.ringTerminals),
       wireTypes: byId(ir.catalog.wireTypes),
+      accessoryMaterials: ir.catalog.accessoryMaterials ? byId(ir.catalog.accessoryMaterials) : undefined,
       studs: ir.catalog.studs ? byId(ir.catalog.studs) : undefined
     },
     connectorOccurrences: byId(ir.connectorOccurrences).map((occurrence) => ({

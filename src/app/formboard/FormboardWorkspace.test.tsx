@@ -45,4 +45,12 @@ describe('FormboardWorkspace', () => {
     fireEvent.keyDown(window, { key: 'f' });
     expect(board.getAttribute('viewBox')).toBe('0 0 900 600');
   });
+
+  it('creates and selects bounded route-station accessory intent', () => {
+    render(<FormboardWorkspace project={controllerChassisProject} />);
+    fireEvent.click(screen.getByRole('button', { name: /ROUTE_MOTOR.*483\.6 mm/ }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Label' }));
+    expect(screen.getByRole('button', { name: 'LABEL_2label' })).toBeTruthy();
+    expect(screen.getByText('label:LABEL_2')).toBeTruthy();
+  });
 });

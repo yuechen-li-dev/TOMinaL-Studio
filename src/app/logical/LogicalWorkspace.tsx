@@ -1,4 +1,4 @@
-import { Background, Controls, MiniMap, ReactFlow, ReactFlowProvider, type Node } from '@xyflow/react';
+import { Background, Controls, MiniMap, ReactFlow, ReactFlowProvider, type Node, type NodeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -22,10 +22,23 @@ function LogicalSurface({ harness, selection, dispatch }: { harness: HarnessIr; 
     dispatch({ type: 'selection.set', selection: entities.length ? { entities, primary: entities[0] } : emptySelection });
   }, [dispatch]);
 
-  return <ReactFlow fitView nodes={nodes} edges={edges} onSelectionChange={handleSelection} onPaneClick={() => dispatch({ type: 'selection.clear' })} onNodeDragStop={(_, node) => setLayout((current) => ({ ...current, [node.id]: node.position }))} nodesDraggable nodesConnectable={false} deleteKeyCode={null} minZoom={0.2} maxZoom={2.5}>
+  const handleNodesChange = useCallback((changes: NodeChange<Node>[]) => {
+    setLayout((current) => {
+      let next = current;
+      for (const change of changes) {
+        if (change.type !== 'position' || !change.position) continue;
+        const previous = next[change.id];
+        if (previous?.x === change.position.x && previous.y === change.position.y) continue;
+        next = { ...next, [change.id]: change.position };
+      }
+      return next;
+    });
+  }, []);
+
+  return <ReactFlow className="logical-flow" fitView nodes={nodes} edges={edges} onNodesChange={handleNodesChange} onSelectionChange={handleSelection} onPaneClick={() => dispatch({ type: 'selection.clear' })} nodesDraggable nodesConnectable={false} deleteKeyCode={null} minZoom={0.2} maxZoom={2.5}>
     <Background color="#25344a" gap={24} size={1} />
     <MiniMap className="!bg-slate-900" nodeColor="#64748b" pannable zoomable />
-    <Controls className="!bg-slate-900" />
+    <Controls className="logical-flow-controls !bg-slate-900" />
   </ReactFlow>;
 }
 

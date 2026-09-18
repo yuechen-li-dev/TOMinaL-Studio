@@ -8,7 +8,7 @@ import { BomWorkspace, ManufacturingWorkspace, QuoteWorkspace, WiresWorkspace } 
 import { exportFormboardSvg, validateFormboard, type TominalProject } from '@/formboard';
 import { generateConnectorDeclarations } from '@/harness-authoring';
 import { validateHarnessIr } from '@/harness-core';
-import { downloadTextFile, exportNativeArtifactFolder } from '@/desktop';
+import { downloadTextFile, exportNativeArtifactFile, exportNativeArtifactFolder } from '@/desktop';
 import { controllerChassisLocalQuoteData, controllerChassisQuoteTimestamp } from '../../../fixtures/controller-chassis/localQuoteData';
 import { CommandPalette } from './CommandPalette';
 import { EntityBrowser } from './EntityBrowser';
@@ -54,8 +54,16 @@ export function AppShell({ project, catalog, projectFileActions, quoteRevision, 
     catch { return undefined; }
   }, [project, quote]);
   const [exportStatus, setExportStatus] = useState('');
-  const downloadArtifact = (item: GeneratedArtifact) => {
-    downloadTextFile(item.file, item.content, item.file.endsWith('.json') ? 'application/json;charset=utf-8' : 'text/plain;charset=utf-8');
+  const downloadArtifact = async (item: GeneratedArtifact) => {
+    try {
+      if (projectFileActions.isDesktop) {
+        const path = await exportNativeArtifactFile(item);
+        if (path) setExportStatus(`Exported · ${path}`);
+      } else {
+        downloadTextFile(item.file, item.content, item.file.endsWith('.json') ? 'application/json;charset=utf-8' : 'text/plain;charset=utf-8');
+        setExportStatus(`Downloaded · ${item.file}`);
+      }
+    } catch (error) { setExportStatus(`Export failed · ${error instanceof Error ? error.message : String(error)}`); }
   };
   const exportAll = async () => {
     if (!artifactPackage) return;

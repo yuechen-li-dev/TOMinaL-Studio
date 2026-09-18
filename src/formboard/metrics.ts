@@ -40,6 +40,56 @@ function cubicPoint(span: CubicSpan, t: number): PointMm {
   };
 }
 
+function flattenCubic(span: CubicSpan): PointMm[] {
+  const points: PointMm[] = [span[0]];
+  const recurse = (from: number, to: number, a: PointMm, b: PointMm, depth: number) => {
+    const mid = (from + to) / 2;
+    const m = cubicPoint(span, mid);
+    const chord = Number(pointDistanceMm(a, b));
+    const split = Number(pointDistanceMm(a, m)) + Number(pointDistanceMm(m, b));
+    if (depth >= 12 || split - chord <= 0.001) {
+      points.push(b);
+      return;
+    }
+    recurse(from, mid, a, m, depth + 1);
+    recurse(mid, to, m, b, depth + 1);
+  };
+  recurse(0, 1, span[0], span[3], 0);
+  return points;
+}
+
+export function pathPolyline(
+  points: readonly [PointMm, PointMm, ...PointMm[]],
+  geometryKind: 'polyline' | 'cubicSpline' = 'polyline'
+): readonly PointMm[] {
+  if (geometryKind === 'polyline') return points;
+  return cubicSpans(points).flatMap((span, index) => flattenCubic(span).slice(index === 0 ? 0 : 1));
+}
+
+export function pointAtPathStation(
+  points: readonly [PointMm, PointMm, ...PointMm[]],
+  stationMm: number,
+  geometryKind: 'polyline' | 'cubicSpline' = 'polyline'
+): PointMm | undefined {
+  const flattened = pathPolyline(points, geometryKind);
+  const total = Number(getPathLength(points, geometryKind));
+  if (!Number.isFinite(stationMm) || stationMm < 0 || stationMm > total + 1e-6) return undefined;
+  if (stationMm <= 0) return flattened[0];
+  let traversed = 0;
+  for (let index = 1; index < flattened.length; index += 1) {
+    const length = Number(pointDistanceMm(flattened[index - 1], flattened[index]));
+    if (traversed + length >= stationMm || index === flattened.length - 1) {
+      const ratio = length === 0 ? 0 : Math.min(1, Math.max(0, (stationMm - traversed) / length));
+      return {
+        x: coordinate(Number(flattened[index - 1].x) + (Number(flattened[index].x) - Number(flattened[index - 1].x)) * ratio),
+        y: coordinate(Number(flattened[index - 1].y) + (Number(flattened[index].y) - Number(flattened[index - 1].y)) * ratio)
+      };
+    }
+    traversed += length;
+  }
+  return flattened[flattened.length - 1];
+}
+
 function cubicArcLength(span: CubicSpan): number {
   const recurse = (from: number, to: number, a: PointMm, b: PointMm, depth: number): number => {
     const mid = (from + to) / 2;
@@ -133,6 +183,28 @@ export function getRouteLength(formboard: FormboardDocument, routeId: RouteId): 
     hasOverride ||= length.source === 'override';
   }
   return { status: 'resolved', valueMm: total as Millimeters, source: hasOverride ? 'override' : 'geometry' };
+}
+
+export function getRouteStationPoint(formboard: FormboardDocument, routeId: RouteId, stationMm: number): PointMm | undefined {
+  const traversal = traverseRoute(formboard, routeId);
+  if (traversal.status === 'unresolved' || !Number.isFinite(stationMm) || stationMm < 0) return undefined;
+  let cursor = 0;
+  for (const segment of traversal.segments) {
+    const geometry = segment.geometry;
+    const points = (segment.reversed ? [...geometry.points].reverse() : geometry.points) as [PointMm, PointMm, ...PointMm[]];
+    const length = Number(getPathLength(points, geometry.geometryKind));
+    if (stationMm <= cursor + length + 1e-6) return pointAtPathStation(points, stationMm - cursor, geometry.geometryKind);
+    cursor += length;
+  }
+  if (Math.abs(stationMm - cursor) > 1e-6) return undefined;
+  const last = traversal.segments[traversal.segments.length - 1];
+  return last.reversed ? last.geometry.points[0] : last.geometry.points[last.geometry.points.length - 1];
+}
+
+export function getRouteSpanPolyline(formboard: FormboardDocument, routeId: RouteId, startStationMm: number, endStationMm: number): readonly PointMm[] {
+  if (!(endStationMm > startStationMm)) return [];
+  const count = Math.max(2, Math.ceil((endStationMm - startStationMm) / 10) + 1);
+  return Array.from({ length: count }, (_, index) => getRouteStationPoint(formboard, routeId, startStationMm + (endStationMm - startStationMm) * index / (count - 1))).filter((point): point is PointMm => point !== undefined);
 }
 
 export function getConductorRouteLength(

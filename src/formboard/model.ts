@@ -6,7 +6,11 @@ import type {
   RouteId,
   RouteJunctionId,
   RouteSegmentId,
-  StudId
+  StudId,
+  LabelId,
+  TapeWrapId,
+  SleeveId,
+  CatalogPartId
 } from '@/harness-core';
 
 export type Degrees = number & { readonly __brand: 'Degrees' };
@@ -113,8 +117,51 @@ export type ContextRectangle = {
   readonly label?: string;
 };
 
+export type BundlePackingPolicy = { readonly efficiency: number };
+
+export type AccessoryLabelPlacement = {
+  readonly kind: 'label';
+  readonly id: LabelId;
+  readonly routeId: RouteId;
+  readonly stationMm: Millimeters;
+  readonly text: string;
+  readonly catalogPartId?: CatalogPartId;
+  readonly calloutPosition?: PointMm;
+  readonly notes?: string;
+};
+
+export type TapeWrapMode = 'spiral' | 'halfLap' | 'customOverlap';
+
+export type TapeWrapPlacement = {
+  readonly kind: 'tapeWrap';
+  readonly id: TapeWrapId;
+  readonly routeId: RouteId;
+  readonly startStationMm: Millimeters;
+  readonly endStationMm: Millimeters;
+  readonly catalogPartId: CatalogPartId;
+  readonly mode: TapeWrapMode;
+  readonly overlapFraction: number;
+  readonly wasteFactor: number;
+  readonly notes?: string;
+};
+
+export type SleevePlacement = {
+  readonly kind: 'sleeve';
+  readonly id: SleeveId;
+  readonly routeId: RouteId;
+  readonly startStationMm: Millimeters;
+  readonly endStationMm: Millimeters;
+  readonly catalogPartId: CatalogPartId;
+  readonly startAllowanceMm: Millimeters;
+  readonly endAllowanceMm: Millimeters;
+  readonly fitFactor?: number;
+  readonly notes?: string;
+};
+
+export type AccessoryIntent = AccessoryLabelPlacement | TapeWrapPlacement | SleevePlacement;
+
 export type FormboardDocument = {
-  readonly formboardVersion: '1';
+  readonly formboardVersion: '1' | '2';
   readonly harnessId: string;
   readonly title: string;
   readonly revision?: string;
@@ -128,6 +175,8 @@ export type FormboardDocument = {
   readonly annotations: readonly FormboardAnnotation[];
   readonly dimensions: readonly LinearDimension[];
   readonly context: readonly ContextRectangle[];
+  readonly accessories?: readonly AccessoryIntent[];
+  readonly bundlePackingPolicy?: BundlePackingPolicy;
   readonly exportSettings: {
     readonly scale: '1:1';
     readonly includeGrid: boolean;
@@ -147,6 +196,7 @@ export type FormboardSelection =
   | { readonly kind: 'routeSegment'; readonly id: RouteSegmentId }
   | { readonly kind: 'route'; readonly id: RouteId }
   | { readonly kind: 'conductor'; readonly id: ConductorId };
+
 
 export const degrees = (value: number): Degrees => value as Degrees;
 

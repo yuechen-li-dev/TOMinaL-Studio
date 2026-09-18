@@ -1,6 +1,6 @@
 import type { MaterialCatalogData } from '@/catalog/catalogData';
 import type { EntityRef, HarnessIr, RouteSegmentId } from '@/harness-core';
-import type { FormboardDocument, PointMm } from '@/formboard';
+import type { AccessoryIntent, FormboardDocument, PointMm } from '@/formboard';
 
 export type WorkspaceId = 'logical' | 'formboard' | 'wires' | 'bom' | 'quote' | 'manufacturing' | 'catalog';
 
@@ -30,6 +30,7 @@ export type AppCommand =
   | { readonly type: 'formboard.replace'; readonly document: FormboardDocument }
   | { readonly type: 'formboard.moveConnector'; readonly id: string; readonly position: PointMm }
   | { readonly type: 'formboard.moveRoutePoint'; readonly id: RouteSegmentId; readonly index: number; readonly position: PointMm }
+  | { readonly type: 'formboard.updateAccessory'; readonly id: string; readonly patch: Partial<AccessoryIntent> }
   | { readonly type: 'harness.updateConductor'; readonly id: string; readonly patch: Partial<HarnessIr['conductors'][number]> }
   | { readonly type: 'catalog.replace'; readonly catalog: MaterialCatalogData }
   | { readonly type: 'quote.refresh' };

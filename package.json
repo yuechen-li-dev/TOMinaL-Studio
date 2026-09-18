@@ -14,6 +14,7 @@
     "test": "vitest run",
     "formboard:evidence": "vite-node scripts/generate-formboard-evidence.ts",
     "artifacts:build": "vite-node scripts/build-controller-chassis-artifacts.ts",
+    "accessories:qualify": "vite-node scripts/qualify-accessories.ts",
     "ui:profile": "node scripts/profile-ui.mjs",
     "ui:qualify": "node scripts/qualify-ui.mjs",
     "artifacts:qualify-ui": "node scripts/qualify-artifacts-ui.mjs"

@@ -24,11 +24,15 @@ export function exportFormboardSvg(harness: HarnessIr, document: FormboardDocume
     if (item.type === 'rect') {
       lines.push(`  <rect id="${esc(item.id)}" data-role="${item.role}" x="${n(item.x)}" y="${n(item.y)}" width="${n(item.width)}" height="${n(item.height)}" fill="none" stroke="#94a3b8" stroke-width="0.6" stroke-dasharray="4 2"/>`);
     } else if (item.type === 'path') {
-      lines.push(`  <path id="${esc(item.id)}" data-entity-kind="routeSegment" data-entity-id="${esc(item.id)}" d="${item.d}" fill="none" stroke="#334155" stroke-width="${n(Math.max(1, item.strokeWidth))}" stroke-linecap="round" stroke-linejoin="round"/>`);
+      const stroke = item.role === 'tapeWrap' ? '#f59e0b' : item.role === 'sleeve' ? '#0891b2' : '#334155';
+      const dash = item.role === 'sleeve' ? ' stroke-dasharray="5 2"' : '';
+      lines.push(`  <path id="${esc(item.id)}" data-role="${esc(item.role)}" data-entity-kind="${esc(item.role)}" data-entity-id="${esc(item.id)}" d="${item.d}" fill="none" stroke="${stroke}" stroke-opacity="${item.role === 'routeSegment' ? '1' : '0.72'}" stroke-width="${n(Math.max(1, item.strokeWidth))}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`);
     } else if (item.type === 'text') {
       lines.push(`  <text id="${esc(item.id)}" x="${n(item.x)}" y="${n(item.y)}" font-family="sans-serif" font-size="5" fill="#0f172a">${esc(item.text)}</text>`);
     } else if (item.type === 'callout') {
-      lines.push(`  <g id="${esc(item.id)}" data-role="${item.role}" data-entity-kind="route" data-entity-id="${esc(item.entityId)}"><rect x="${n(item.x)}" y="${n(item.y)}" width="${n(item.width)}" height="${n(item.height)}" rx="2" fill="#f8fafc" fill-opacity="0.96" stroke="#cbd5e1" stroke-width="0.45"/><circle cx="${n(item.x + 5)}" cy="${n(item.y + item.height / 2)}" r="1.8" fill="#0ea5e9"/><text x="${n(item.x + 9)}" y="${n(item.y + item.height / 2 + 1.5)}" font-family="sans-serif" font-size="4.5" font-weight="600" fill="#0f172a">${esc(item.text)}</text></g>`);
+      const entityKind = item.role === 'accessoryLabel' ? 'label' : item.role === 'heatShrink' ? 'heatShrinkPlacement' : 'route';
+      const leader = item.anchorX === undefined ? '' : `<path d="M ${n(item.anchorX)} ${n(item.anchorY!)} L ${n(item.x)} ${n(item.y + item.height / 2)}" stroke="#64748b" stroke-width="0.45"/><circle cx="${n(item.anchorX)}" cy="${n(item.anchorY!)}" r="1.8" fill="#0ea5e9"/>`;
+      lines.push(`  <g id="${esc(item.id)}" data-role="${item.role}" data-entity-kind="${entityKind}" data-entity-id="${esc(item.entityId)}">${leader}<rect x="${n(item.x)}" y="${n(item.y)}" width="${n(item.width)}" height="${n(item.height)}" rx="2" fill="#f8fafc" fill-opacity="0.96" stroke="#cbd5e1" stroke-width="0.45"/><circle cx="${n(item.x + 5)}" cy="${n(item.y + item.height / 2)}" r="1.8" fill="#0ea5e9"/><text x="${n(item.x + 9)}" y="${n(item.y + item.height / 2 + 1.5)}" font-family="sans-serif" font-size="4.5" font-weight="600" fill="#0f172a">${esc(item.text)}</text></g>`);
     } else if (item.marker === 'connector') {
       lines.push(`  <g id="${esc(item.id)}" data-entity-kind="connectorOccurrence" data-entity-id="${esc(item.id)}" transform="translate(${n(item.x)} ${n(item.y)})"><rect x="-12" y="-8" width="24" height="16" rx="1" fill="#e0f2fe" stroke="#0369a1" stroke-width="1"/><path d="M 0 -5 L 5 0 L 0 5" fill="none" stroke="#0369a1" stroke-width="1"/><text x="0" y="-11" text-anchor="middle" font-family="sans-serif" font-size="4">${esc(item.id)}</text></g>`);
     } else if (item.marker === 'splice') {

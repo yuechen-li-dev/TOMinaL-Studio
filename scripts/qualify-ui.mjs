@@ -26,8 +26,13 @@ const selectedPath = page.locator('[data-entity-id="SEG_MOTOR_OUT"]');
 check((await selectedPath.getAttribute('stroke')) === '#0ea5e9', 'Selected conductor route was not highlighted on Formboard.');
 await page.screenshot({ path: path.join(outputDirectory, 'formboard-selected-conductor.png'), fullPage: true });
 
-const motorRouteButton = page.getByRole('button', { name: /ROUTE_MOTOR.*mm/ });
+const motorRouteButton = page.getByRole('button', { name: /^ROUTE_MOTOR(?!_).*mm/ });
 const beforeText = await motorRouteButton.textContent();
+await motorRouteButton.click();
+await page.getByRole('button', { name: '+ Label', exact: true }).click();
+check(await page.getByLabel('Label text').isVisible(), 'Created route-station label was not selected in the inspector.');
+await page.getByRole('button', { name: /TAPE_MOTOR.*tapeWrap/ }).click();
+check((await page.getByText('Estimated tape').locator('..').textContent())?.includes('mm'), 'Tape selection did not expose estimated consumption.');
 const svg = page.getByLabel('1:1 harness formboard');
 const bounds = await svg.boundingBox();
 if (!bounds) throw new Error('Formboard SVG has no browser bounds.');

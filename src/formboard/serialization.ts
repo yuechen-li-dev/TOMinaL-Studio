@@ -13,7 +13,8 @@ export function orderedFormboard(document: FormboardDocument): FormboardDocument
     routes: by(document.routes, (item) => item.routeId),
     annotations: by(document.annotations, (item) => item.id),
     dimensions: by(document.dimensions, (item) => item.id),
-    context: by(document.context, (item) => item.id)
+    context: by(document.context, (item) => item.id),
+    accessories: by(document.accessories ?? [], (item) => item.id)
   };
 }
 
@@ -23,8 +24,7 @@ export function serializeFormboard(document: FormboardDocument): string {
 
 export function parseFormboard(text: string): FormboardDocument {
   const parsed = JSON.parse(text) as Partial<FormboardDocument>;
-  if (parsed.formboardVersion !== '1') throw new Error(`Unsupported formboard version ${String(parsed.formboardVersion)}.`);
+  if (parsed.formboardVersion !== '1' && parsed.formboardVersion !== '2') throw new Error(`Unsupported formboard version ${String(parsed.formboardVersion)}.`);
   if (!parsed.board || !Array.isArray(parsed.segmentGeometry) || !Array.isArray(parsed.routes)) throw new Error('Invalid FormboardDocument.');
-  return parsed as FormboardDocument;
+  return { ...parsed, accessories: parsed.accessories ?? [] } as FormboardDocument;
 }
-

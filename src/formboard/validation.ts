@@ -1,6 +1,7 @@
 import { sortDiagnostics, type Diagnostic, type EntityRef, type HarnessIr } from '@/harness-core';
 import type { FormboardDocument, PhysicalRouteNodeRef, PointMm } from './model';
 import { getPathLength, getSegmentLength, traverseRoute } from './metrics';
+import { validateAccessories } from './accessories';
 
 const ref = (kind: EntityRef['kind'], id: string): EntityRef => ({ kind, id });
 
@@ -140,5 +141,6 @@ export function validateFormboard(harness: HarnessIr, formboard: FormboardDocume
     }
   }
 
+  diagnostics.push(...validateAccessories({ harness, formboard }));
   return sortDiagnostics(diagnostics);
 }
